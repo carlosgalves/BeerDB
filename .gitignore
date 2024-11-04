@@ -18,3 +18,9 @@ web-build/
 
 expo-env.d.ts
 # @end expo-cli
+/.idea/.gitignore
+/.idea/BeerDB.iml
+/.idea/caches/deviceStreaming.xml
+/.idea/misc.xml
+/.idea/modules.xml
+/.idea/vcs.xml

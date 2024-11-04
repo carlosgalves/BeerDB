@@ -2,17 +2,8 @@ import React from 'react';
 import { StyleSheet, View, Image } from 'react-native';
 import { Card, Title, Text } from 'react-native-paper';
 import { StarRatingDisplay } from 'react-native-star-rating-widget';
+import { flagImages, beerImages} from '../data/mappers/imageMapper'
 
-
-const flagImages: { [key: string]: any } = {
-  "Angola": require(`../assets/images/flags/ao.png`),
-  "Portugal": require(`../assets/images/flags/pt.png`),
-};
-
-const beerImages: { [key: string]: any } = {
-  "Cuca": require('../assets/images/beer/cuca.png'),
-  "Coruja": require('../assets/images/beer/coruja.png'),
-};
 
 interface BeerCardProps {
   beerName: string;
