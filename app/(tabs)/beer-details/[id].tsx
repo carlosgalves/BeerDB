@@ -1,13 +1,22 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
+import StarRating from 'react-native-star-rating-widget';
 import { beers } from '../../../data/beerData';
 
 
 export default function BeerDetails() {
   const { id } = useLocalSearchParams();
-
   const beer = beers.find((beer) => beer.id === id);
+  const [aromaRating, setAromaRating] = useState(0);
+  const [tasteRating, setTasteRating] = useState(0);
+  const [afterTasteRating, setAfterTasteRating] = useState(0);
+  const [overallRating, setOverallRating] = useState(0);
+
+useEffect(() => {
+  const averageRating = (aromaRating + tasteRating + afterTasteRating) / 3;
+  setOverallRating(averageRating.toFixed(2));
+}, [aromaRating, tasteRating, afterTasteRating]);
 
   if (!beer) {
       return (
@@ -24,9 +33,6 @@ export default function BeerDetails() {
       type,
       description,
       alcoholPercentage,
-      aromaRating,
-      tasteRating,
-      afterTasteRating,
       rating,
       tags,
     } = beer;
@@ -39,11 +45,37 @@ export default function BeerDetails() {
       <Text style={styles.type}>Type: {type}</Text>
       <Text style={styles.description}>Description: {description}</Text>
       <Text style={styles.alcohol}>ABV: {alcoholPercentage}%</Text>
-      <Text style={styles.rating}>Overall Rating: {rating}</Text>
+      <Text style={styles.rating}>Overall Rating: {overallRating}</Text>
       <Text style={styles.tags}>Tags: {tags?.join(', ')}</Text>
-      <Text style={styles.detail}>Aroma Rating: {aromaRating}</Text>
-      <Text style={styles.detail}>Taste Rating: {tasteRating}</Text>
-      <Text style={styles.detail}>Aftertaste Rating: {afterTasteRating}</Text>
+      <Text style={styles.detail}>Aroma:</Text>
+      <StarRating
+        rating={aromaRating}
+        onChange={setAromaRating}
+        maxStars={5}
+        starSize={40}
+        enableSwiping={true}
+        enableHalfStar={true}
+      />
+
+      <Text style={styles.detail}>Taste:</Text>
+      <StarRating
+        rating={tasteRating}
+        onChange={setTasteRating}
+        maxStars={5}
+        starSize={40}
+        enableSwiping={true}
+        enableHalfStar={true}
+      />
+
+      <Text style={styles.detail}>Aftertaste:</Text>
+      <StarRating
+        rating={afterTasteRating}
+        onChange={setAfterTasteRating}
+        maxStars={5}
+        starSize={40}
+        enableSwiping={true}
+        enableHalfStar={true}
+      />
     </ScrollView>
   );
 }
