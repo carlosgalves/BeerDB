@@ -7,7 +7,7 @@ import { flagImages, beerImages} from '../data/mappers/imageMapper'
 
 interface BeerCardProps {
   beerName: string;
-  beerID: string;
+  id: string;
   brewery: string;
   country: string;
   rating: number;

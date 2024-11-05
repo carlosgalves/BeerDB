@@ -1,23 +1,7 @@
-import { StyleSheet, View, ScrollView} from 'react-native';
+import { StyleSheet, View, ScrollView, Pressable} from 'react-native';
 import BeerCard from '../../components/BeerCard';
-
-
-export const beers = [
-  {
-    beerName: "Cuca",
-    brewery: "",
-    country: "Angola",
-    beerID: "cuca",
-    rating: 4.21,
-  },
-  {
-    beerName: "Coruja",
-    brewery: "Super Bock Group",
-    country: "Portugal",
-    beerID: "coruja",
-    rating: 3.9,
-  },
-];
+import { Link } from 'expo-router';
+import { beers } from '../../data/beerData';
 
 
 export default function HomeScreen() {
@@ -25,13 +9,24 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {beers.map((beer, index) => (
-          <BeerCard
-            beerName={beer.beerName}
-            brewery={beer.brewery}
-            country={beer.country}
-            beerID={beer.beerID}
-            rating={beer.rating}
-          />
+          <Link href={{
+            pathname: '/beer-details/[id]',
+            params: {
+              id: beer.id,
+            },
+            }}
+            asChild
+          >
+            <Pressable>
+              <BeerCard
+                beerName={beer.beerName}
+                brewery={beer.brewery}
+                country={beer.country}
+                beerID={beer.beerID}
+                rating={beer.rating}
+              />
+            </Pressable>
+          </Link>
         ))}
       </ScrollView>
     </View>

@@ -1,6 +1,6 @@
 export const beers = [
   {
-    beerID: "cuca",
+    id: "cuca",
     beerName: "Cuca",
     brewery: "",
     country: "Angola",
@@ -14,7 +14,7 @@ export const beers = [
     afterTasteRating: 4.0,
   },
   {
-    beerID: "coruja",
+    id: "coruja",
     beerName: "Coruja",
     brewery: "Super Bock Group",
     country: "Portugal",
