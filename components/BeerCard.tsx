@@ -6,7 +6,7 @@ import { flagImages, beerImages} from '../data/mappers/imageMapper'
 
 
 interface BeerCardProps {
-  beerName: string;
+  name: string;
   id: string;
   brewery: string;
   country: string;
@@ -14,11 +14,11 @@ interface BeerCardProps {
 }
 
 
-const BeerCard: React.FC<BeerCardProps> = ({ beerName, brewery, country, rating }) => {
+const BeerCard: React.FC<BeerCardProps> = ({ name, brewery, country, rating }) => {
   return (
     <Card style={styles.card}>
       <Card.Title
-        title={beerName}
+        title={name}
         subtitle={brewery}
         titleStyle={styles.titleStyle}
         subtitleStyle={styles.subtitleStyle}
@@ -31,7 +31,7 @@ const BeerCard: React.FC<BeerCardProps> = ({ beerName, brewery, country, rating 
       </View>
       <View style={styles.coverContainer}>
         <Image
-          source={beerImages[beerName]}
+          source={beerImages[name]}
           style={styles.image}
           resizeMode="contain"
         />
