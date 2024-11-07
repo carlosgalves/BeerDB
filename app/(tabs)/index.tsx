@@ -16,7 +16,7 @@ export default function HomeScreen() {
   useEffect(() => {
     async function fetchBeers() {
       try {
-        const querySnapshot = await getDocs(collection(FIRESTORE, 'beers')); // 'beers' is the collection name
+        const querySnapshot = await getDocs(collection(FIRESTORE, 'beers'));
         const beerData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setBeers(beerData);
       } catch (error) {

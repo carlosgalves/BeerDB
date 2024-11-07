@@ -1,50 +1,76 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import StarRating from 'react-native-star-rating-widget';
-import { beers } from '../../../data/beerData';
-
+import { FIRESTORE } from '../../../firebaseConfig'
+import { collection, doc, getDoc } from 'firebase/firestore';
 
 export default function BeerDetails() {
   const { id } = useLocalSearchParams();
-  const beer = beers.find((beer) => beer.id === id);
+  const [beer, setBeer] = useState();
+  const [loading, setLoading] = useState(true);
   const [aromaRating, setAromaRating] = useState(0);
   const [tasteRating, setTasteRating] = useState(0);
   const [afterTasteRating, setAfterTasteRating] = useState(0);
   const [overallRating, setOverallRating] = useState(0);
 
-useEffect(() => {
-  const averageRating = (aromaRating + tasteRating + afterTasteRating) / 3;
-  setOverallRating(averageRating.toFixed(2));
-}, [aromaRating, tasteRating, afterTasteRating]);
+  useEffect(() => {
+    async function fetchBeerData() {
+      try {
+        const beerRef = doc(FIRESTORE, 'beers', id)
+        const beerDoc = await getDoc(beerRef)
+
+        if (beerDoc.exists()) {
+          const beer = { id: beerDoc.id, ...beerDoc.data() };
+          console.log('Fetched beer:', beer);
+          setBeer(beer)
+        } else {
+          console.log('No such beer!');
+        }
+      } catch (error) {
+        console.error("Error fetching this beer:", error);
+      }finally {
+        setLoading(false);
+      }
+    }
+    fetchBeerData()
+  }, [id]);
+
+  useEffect(() => {
+    const averageRating = (aromaRating + tasteRating + afterTasteRating) / 3;
+    setOverallRating(averageRating.toFixed(2));
+  }, [aromaRating, tasteRating, afterTasteRating]);
+
+  if (loading) {
+    return <ActivityIndicator size="large" color="#0000ff" />;
+  }
 
   if (!beer) {
-      return (
-        <View style={styles.container}>
-          <Text style={styles.error}>Beer not found.</Text>
-        </View>
-      );
-    }
+    return (
+      <View style={styles.container}>
+        <Text style={styles.error}>Beer not found.</Text>
+      </View>
+    );
+  }
 
-    const {
-      beerName,
-      brewery,
-      country,
-      type,
-      description,
-      alcoholPercentage,
-      rating,
-      tags,
-    } = beer;
+  const {
+    name,
+    brewery,
+    country,
+    type,
+    description,
+    abv,
+    tags
+  } = beer;
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>{beerName}</Text>
+      <Text style={styles.title}>{name}</Text>
       <Text style={styles.subtitle}>Brewery: {brewery || 'Unknown'}</Text>
       <Text style={styles.country}>Country: {country}</Text>
       <Text style={styles.type}>Type: {type}</Text>
       <Text style={styles.description}>Description: {description}</Text>
-      <Text style={styles.alcohol}>ABV: {alcoholPercentage}%</Text>
+      <Text style={styles.alcohol}>ABV: {abv}%</Text>
       <Text style={styles.rating}>Overall Rating: {overallRating}</Text>
       <Text style={styles.tags}>Tags: {tags?.join(', ')}</Text>
       <Text style={styles.detail}>Aroma:</Text>
