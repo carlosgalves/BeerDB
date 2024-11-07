@@ -4,6 +4,7 @@ import BeerCard from '../../components/BeerCard';
 import { Link } from 'expo-router';
 import { FIRESTORE } from '../../firebaseConfig'
 import { collection, getDocs } from 'firebase/firestore';
+import { useFocusEffect } from '@react-navigation/native';
 
 
 export default function HomeScreen() {
@@ -11,22 +12,24 @@ export default function HomeScreen() {
   const [beers, setBeers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-
-  useEffect(() => {
-    async function fetchBeers() {
-      try {
-        const querySnapshot = await getDocs(collection(FIRESTORE, 'beers'));
-        const beerData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setBeers(beerData);
-      } catch (error) {
-        console.error("Error fetching beers:", error);
-      } finally {
-        setLoading(false);
-      }
+  async function fetchBeers() {
+    try {
+      const querySnapshot = await getDocs(collection(FIRESTORE, 'beers'));
+      const beerData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setBeers(beerData);
+    } catch (error) {
+      console.error("Error fetching beers:", error);
+    } finally {
+      setLoading(false);
     }
+  }
 
-    fetchBeers();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      setLoading(true);
+      fetchBeers();
+    }, [])
+  );
 
   if (loading) {
     return <ActivityIndicator size="large" color="#0000ff" />;
