@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import BeerCard from '../../components/BeerCard';
 import { Link } from 'expo-router';
-//import { getBeers } from '../../data/beerData';
 import { FIRESTORE } from '../../firebaseConfig'
 import { collection, getDocs } from 'firebase/firestore';
 

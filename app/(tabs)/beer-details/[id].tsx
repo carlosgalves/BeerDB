@@ -3,16 +3,17 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-nat
 import { useLocalSearchParams } from 'expo-router';
 import StarRating from 'react-native-star-rating-widget';
 import { FIRESTORE } from '../../../firebaseConfig'
-import { collection, doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+
 
 export default function BeerDetails() {
   const { id } = useLocalSearchParams();
   const [beer, setBeer] = useState();
   const [loading, setLoading] = useState(true);
-  const [aromaRating, setAromaRating] = useState(0);
-  const [tasteRating, setTasteRating] = useState(0);
-  const [afterTasteRating, setAfterTasteRating] = useState(0);
-  const [overallRating, setOverallRating] = useState(0);
+  const [aromaRating, setAromaRating] = useState(null);
+  const [tasteRating, setTasteRating] = useState(null);
+  const [afterTasteRating, setAfterTasteRating] = useState(null);
+  const [overallRating, setOverallRating] = useState(null);
 
   useEffect(() => {
     async function fetchBeerData() {
@@ -24,6 +25,12 @@ export default function BeerDetails() {
           const beer = { id: beerDoc.id, ...beerDoc.data() };
           console.log('Fetched beer:', beer);
           setBeer(beer)
+
+          // Initialize ratings from the fetched beer data
+          setOverallRating(beer.overallRating || 0);
+          setAromaRating(beer.aromaRating ?? 0);
+          setTasteRating(beer.tasteRating ?? 0);
+          setAfterTasteRating(beer.afterTasteRating ?? 0);
         } else {
           console.log('No such beer!');
         }
@@ -37,9 +44,37 @@ export default function BeerDetails() {
   }, [id]);
 
   useEffect(() => {
-    const averageRating = (aromaRating + tasteRating + afterTasteRating) / 3;
-    setOverallRating(averageRating.toFixed(2));
+    if ([aromaRating, tasteRating, afterTasteRating].every(rating => rating !== null && rating > 0)) {
+      const averageRating = ((aromaRating + tasteRating + afterTasteRating) / 3).toFixed(2);
+      setOverallRating(averageRating);
+      updateRating('overallRating', averageRating)
+    }
   }, [aromaRating, tasteRating, afterTasteRating]);
+
+  async function updateRating(field, value) {
+    try {
+      const beerRef = doc(FIRESTORE, 'beers', id);
+      await updateDoc(beerRef, { [field]: value });
+      console.log(`Updated ${field} to ${value}`);
+    } catch (error) {
+      console.error(`Error updating ${field}:`, error);
+    }
+  }
+
+  const handleAromaRatingChange = (rating) => {
+    setAromaRating(rating);
+    updateRating('aromaRating', rating);
+  };
+
+  const handleTasteRatingChange = (rating) => {
+    setTasteRating(rating);
+    updateRating('tasteRating', rating);
+  };
+
+  const handleAfterTasteRatingChange = (rating) => {
+    setAfterTasteRating(rating);
+    updateRating('afterTasteRating', rating);
+  };
 
   if (loading) {
     return <ActivityIndicator size="large" color="#0000ff" />;
@@ -76,7 +111,7 @@ export default function BeerDetails() {
       <Text style={styles.detail}>Aroma:</Text>
       <StarRating
         rating={aromaRating}
-        onChange={setAromaRating}
+        onChange={handleAromaRatingChange}
         maxStars={5}
         starSize={40}
         enableSwiping={true}
@@ -86,7 +121,7 @@ export default function BeerDetails() {
       <Text style={styles.detail}>Taste:</Text>
       <StarRating
         rating={tasteRating}
-        onChange={setTasteRating}
+        onChange={handleTasteRatingChange}
         maxStars={5}
         starSize={40}
         enableSwiping={true}
@@ -96,7 +131,7 @@ export default function BeerDetails() {
       <Text style={styles.detail}>Aftertaste:</Text>
       <StarRating
         rating={afterTasteRating}
-        onChange={setAfterTasteRating}
+        onChange={handleAfterTasteRatingChange}
         maxStars={5}
         starSize={40}
         enableSwiping={true}

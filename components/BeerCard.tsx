@@ -10,11 +10,11 @@ interface BeerCardProps {
   id: string;
   brewery: string;
   country: string;
-  rating: number;
+  overallRating: number;
 }
 
 
-const BeerCard: React.FC<BeerCardProps> = ({ name, brewery, country, rating }) => {
+const BeerCard: React.FC<BeerCardProps> = ({ name, brewery, country, overallRating }) => {
   return (
     <Card style={styles.card}>
       <Card.Title
@@ -40,9 +40,9 @@ const BeerCard: React.FC<BeerCardProps> = ({ name, brewery, country, rating }) =
       </Card.Content>
       <View style={styles.ratingContainer}>
         <StarRatingDisplay
-          rating={rating}
+          rating={overallRating}
         />
-         <Text style={styles.ratingText}>({rating}/5)</Text>
+         <Text style={styles.ratingText}>({overallRating}/5)</Text>
       </View>
     </Card>
   );
