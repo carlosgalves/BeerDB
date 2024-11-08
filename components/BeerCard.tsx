@@ -6,19 +6,19 @@ import { flagImages, beerImages} from '../data/mappers/imageMapper'
 
 
 interface BeerCardProps {
-  beerName: string;
+  name: string;
   id: string;
   brewery: string;
   country: string;
-  rating: number;
+  overallRating: number;
 }
 
 
-const BeerCard: React.FC<BeerCardProps> = ({ beerName, brewery, country, rating }) => {
+const BeerCard: React.FC<BeerCardProps> = ({ name, brewery, country, overallRating }) => {
   return (
     <Card style={styles.card}>
       <Card.Title
-        title={beerName}
+        title={name}
         subtitle={brewery}
         titleStyle={styles.titleStyle}
         subtitleStyle={styles.subtitleStyle}
@@ -31,7 +31,7 @@ const BeerCard: React.FC<BeerCardProps> = ({ beerName, brewery, country, rating 
       </View>
       <View style={styles.coverContainer}>
         <Image
-          source={beerImages[beerName]}
+          source={beerImages[name]}
           style={styles.image}
           resizeMode="contain"
         />
@@ -40,9 +40,9 @@ const BeerCard: React.FC<BeerCardProps> = ({ beerName, brewery, country, rating 
       </Card.Content>
       <View style={styles.ratingContainer}>
         <StarRatingDisplay
-          rating={rating}
+          rating={overallRating}
         />
-         <Text style={styles.ratingText}>({rating}/5)</Text>
+         <Text style={styles.ratingText}>({overallRating}/5)</Text>
       </View>
     </Card>
   );
