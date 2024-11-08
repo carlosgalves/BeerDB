@@ -26,6 +26,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="auth"
+        options={{
+          title: 'Auth',
+          tabBarButton:()=>null
+        }}
+      />
+      <Tabs.Screen
         name="beer-details/[id]"
         options={{
           title: 'Beer',
