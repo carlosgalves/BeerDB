@@ -24,3 +24,5 @@ expo-env.d.ts
 /.idea/misc.xml
 /.idea/modules.xml
 /.idea/vcs.xml
+/.env
+/metro.config.js

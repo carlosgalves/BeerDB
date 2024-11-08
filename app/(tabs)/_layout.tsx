@@ -10,26 +10,26 @@ export default function TabLayout() {
 
   return (
     <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-      }}>
+      screenOptions={({ route }) => ({
+        tabBarStyle: {
+          display: route.name === 'example' ? 'none' : 'flex',
+        },
+      })}
+      >
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'home' : 'home-outline'} color={color} />
-          ),
+                      <TabBarIcon name={focused ? 'home' : 'home-outline'} color={color} />
+                    ),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="beer-details/[id]"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'code-slash' : 'code-slash-outline'} color={color} />
-          ),
+          title: 'Beer',
+          tabBarButton:()=>null
         }}
       />
     </Tabs>
