@@ -42,3 +42,4 @@ app-example
 /.idea/modules.xml
 /.idea/vcs.xml
 /.idea/.gitignore
+/.env
