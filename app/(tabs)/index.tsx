@@ -43,6 +43,7 @@ export default function HomeScreen() {
             name={beer.name}
             brewery={beer.brewery}
             country={beer.country}
+            image={beer.image}
           />
         ))}
       </ScrollView>
