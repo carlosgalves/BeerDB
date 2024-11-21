@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, ScrollView, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, ScrollView, ActivityIndicator, Pressable } from 'react-native';
+import { Link } from 'expo-router';
 import BeerCard from '../../components/BeerCard';
 import { FIRESTORE } from '../../firebaseConfig'
 import { collection, getDocs } from 'firebase/firestore';
@@ -38,12 +39,20 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {beers.map((beer) => (
-          <BeerCard
-            key={beer.id}
-            name={beer.name}
-            brewery={beer.brewery}
-            country={beer.country}
-          />
+          <Link href={{
+            pathname: '/beer-details/[id]',
+            params: {
+              id: beer.id,
+            },
+            }}
+            asChild
+            key={beer.id}>
+            <Pressable>
+              <BeerCard
+                {...beer}
+              />
+            </Pressable>
+          </Link>
         ))}
       </ScrollView>
     </View>
