@@ -39,7 +39,7 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {beers.map((beer) => (
-          <Link href={{
+          <Link push href={{
             pathname: '/beer-details/[id]',
             params: {
               id: beer.id,

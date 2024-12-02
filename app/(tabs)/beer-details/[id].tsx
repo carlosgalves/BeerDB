@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image, Button } from 'react-native';
 import { useLocalSearchParams, Stack, useNavigation } from 'expo-router';
 import { FIRESTORE, FIREBASE_AUTH } from '../../../firebaseConfig';
 import { doc, getDoc, updateDoc, collection, setDoc } from 'firebase/firestore';
 import { flagImages, beerImages} from '../../../data/mappers/imageMapper'
-
+import { Ionicons } from '@expo/vector-icons';
 
 export default function BeerDetails() {
   const { id } = useLocalSearchParams();
@@ -12,6 +12,7 @@ export default function BeerDetails() {
   const [loading, setLoading] = useState(true);
 
   const navigation = useNavigation();
+
 
   useEffect(() => {
     async function fetchBeerData() {
@@ -50,8 +51,22 @@ export default function BeerDetails() {
   const { name, brewery, country, type, description, abv, tags, image } = beer;
 
   return (
+    <>
+    <Stack.Screen
+      options={{
+        title: name,
+        headerLeft: () => (
+          <Ionicons
+            name="arrow-back"
+            size={24}
+            color="black"
+            style={{ marginLeft: 10 }}
+            onPress={() => navigation.goBack()}
+          />
+        ),
+      }}
+    />
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>{name}</Text>
       <Text style={styles.subtitle}>Brewery: {brewery || 'Unknown'}</Text>
       <View style={styles.coverContainer}>
         <Image
@@ -80,6 +95,7 @@ export default function BeerDetails() {
       <Text style={styles.detail}>Taste:</Text>
       <Text style={styles.detail}>Aftertaste:</Text>
     </ScrollView>
+    </>
   );
 }
 
