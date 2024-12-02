@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { useLocalSearchParams, Stack, useNavigation } from 'expo-router';
 import { FIRESTORE, FIREBASE_AUTH } from '../../../firebaseConfig';
 import { doc, getDoc, updateDoc, collection, setDoc } from 'firebase/firestore';
+import { flagImages, beerImages} from '../../../data/mappers/imageMapper'
 
 
 export default function BeerDetails() {
@@ -46,12 +47,29 @@ export default function BeerDetails() {
     );
   }
 
-  const { name, brewery, country, type, description, abv, tags } = beer;
+  const { name, brewery, country, type, description, abv, tags, image } = beer;
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>{name}</Text>
       <Text style={styles.subtitle}>Brewery: {brewery || 'Unknown'}</Text>
+      <View style={styles.coverContainer}>
+        <Image
+          source={
+            image
+              ? { uri: `data:image/png;base64,${image}` }
+              : require('../../../assets/images/beer/unknown.png')
+          }
+          style={styles.image}
+          resizeMode="contain"
+        />
+      </View>
+      <View style={styles.flagContainer}>
+        <Image
+          source={flagImages[country]}
+          style={styles.flagImage}
+        />
+      </View>
       <Text style={styles.country}>Country: {country}</Text>
       <Text style={styles.type}>Type: {type}</Text>
       <Text style={styles.description}>Description: {description}</Text>
@@ -114,5 +132,23 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: 'red',
     textAlign: 'center',
+  },
+  coverContainer: {
+    width: '100%',
+    alignItems: 'center',
+    height: 330,
+  },
+  image: {
+      width: '100%',
+      height: '100%',
+  },
+  flagContainer: {
+    position: 'absolute',
+    top: 80,
+    right: 50,
+  },
+  flagImage: {
+    width: 30,
+    height: 30,
   },
 });
