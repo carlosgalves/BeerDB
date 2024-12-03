@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, ScrollView, ActivityIndicator, Pressable } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import BeerCard from '../../components/BeerCard';
-import { FIRESTORE } from '../../firebaseConfig'
+import { FIRESTORE, FIREBASE_AUTH } from '../../firebaseConfig'
 import { collection, getDocs } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
 import { useFocusEffect } from '@react-navigation/native';
 
 
@@ -11,6 +12,17 @@ export default function HomeScreen() {
 
   const [beers, setBeers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(FIREBASE_AUTH, (user) => {
+      if (!user) {
+        router.push('/auth')
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   async function fetchBeers() {
     try {
