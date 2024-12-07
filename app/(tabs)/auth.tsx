@@ -5,7 +5,6 @@ import { signInAnonymously, createUserWithEmailAndPassword, signInWithEmailAndPa
 import { useRouter } from 'expo-router';
 
 
-
 export default function AuthScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -65,8 +64,7 @@ export default function AuthScreen() {
       }
       router.push('/')
     } catch (error) {
-      console.error("Erro ao entrar com email:", error);
-      Alert.alert('Erro ao entrar com email');
+      Alert.alert('Erro ao entrar com email', getErrorMessage(error));
     }
   };
 
@@ -79,6 +77,7 @@ export default function AuthScreen() {
         value={email}
         onChangeText={setEmail}
         style={styles.input}
+        autoCapitalize="none"
         keyboardType="email-address"
       />
       <TextInput

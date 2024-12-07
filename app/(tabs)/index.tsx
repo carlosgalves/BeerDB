@@ -1,50 +1,62 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, ScrollView, ActivityIndicator, Pressable } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  ScrollView,
+  ActivityIndicator,
+  Pressable
+} from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import BeerCard from '../../components/BeerCard';
-import { FIRESTORE, FIREBASE_AUTH } from '../../firebaseConfig'
+import { FIRESTORE, FIREBASE_AUTH } from '../../firebaseConfig';
 import { collection, getDocs } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, FirebaseAuthTypes } from 'firebase/auth';
 import { useFocusEffect } from '@react-navigation/native';
-
 
 export default function HomeScreen() {
 
-  const [beers, setBeers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [initializing, setInitializing] = useState(true);
+  const [user, setUser] = useState<FirebaseAuthTypes.User | null>();
+  const [beers, setBeers] = useState([]);
   const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(FIREBASE_AUTH, (user) => {
+      setUser(user);
+      if (initializing) setInitializing(false);
       if (!user) {
-        router.push('/auth')
+        router.replace('/auth');
       }
-      console.log(user)
     });
 
-    return () => unsubscribe();
-  }, []);
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [initializing]);
 
-  async function fetchBeers() {
+  const fetchBeers = React.useCallback(async () => {
+    setLoading(true);
     try {
       const querySnapshot = await getDocs(collection(FIRESTORE, 'beers'));
-      const beerData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const beerData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setBeers(beerData);
     } catch (error) {
-      console.error("Error fetching beers:", error);
+      console.error('Error fetching beers:', error);
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useFocusEffect(
     React.useCallback(() => {
-      setLoading(true);
       fetchBeers();
-    }, [])
+    }, [fetchBeers])
   );
 
-  if (loading) {
+  if (loading || initializing) {
     return <ActivityIndicator size="large" color="#0000ff" />;
   }
 
@@ -59,11 +71,10 @@ export default function HomeScreen() {
             },
             }}
             asChild
-            key={beer.id}>
+            key={beer.id}
+          >
             <Pressable>
-              <BeerCard
-                {...beer}
-              />
+              <BeerCard {...beer} />
             </Pressable>
           </Link>
         ))}
