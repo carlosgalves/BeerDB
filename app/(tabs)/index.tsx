@@ -19,6 +19,7 @@ export default function HomeScreen() {
       if (!user) {
         router.push('/auth')
       }
+      console.log(user)
     });
 
     return () => unsubscribe();

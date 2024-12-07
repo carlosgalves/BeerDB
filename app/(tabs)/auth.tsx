@@ -12,7 +12,6 @@ export default function AuthScreen() {
   const [isSigningUp, setIsSigningUp] = useState(false);
   const router = useRouter();
 
-console.log("Firebase API Key:", process.env.EXPO_PUBLIC_FIREBASE_API_KEY);
 
   const handleAnonymousSignIn = () => {
     Alert.alert(
