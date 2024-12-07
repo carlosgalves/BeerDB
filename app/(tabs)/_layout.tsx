@@ -40,6 +40,13 @@ export default function TabLayout() {
            href: null
         }}
       />
+      <Tabs.Screen
+        name="auth"
+        options={{
+          title: '',
+           href: null
+        }}
+      />
 
     </Tabs>
   );
