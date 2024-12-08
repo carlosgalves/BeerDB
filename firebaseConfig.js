@@ -5,13 +5,13 @@ import { initializeAuth, getAuth } from 'firebase/auth';
 
 
 EXPO_PUBLIC_FIREBASE_CONFIG={
-  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID
+  apiKey: "AIzaSyDx-RPzH-UjI9NuZO-8D5zxf3aK4cDiXtk",
+  authDomain: "beerdb-78204.firebaseapp.com",
+  projectId: "beerdb-78204",
+  storageBucket: "beerdb-78204.firebasestorage.app",
+  messagingSenderId: "327987095565",
+  appId: "1:327987095565:web:cd236e3fe007e376274d44",
+  measurementId: "G-2YL1R07H4N"
 }
 
 const firebaseConfig = EXPO_PUBLIC_FIREBASE_CONFIG

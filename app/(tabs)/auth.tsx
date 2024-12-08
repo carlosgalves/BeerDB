@@ -12,6 +12,7 @@ export default function AuthScreen() {
   const router = useRouter();
 
   console.log(FIREBASE_AUTH)
+  Alert.alert(FIREBASE_AUTH)
 
   const handleAnonymousSignIn = () => {
     Alert.alert(
