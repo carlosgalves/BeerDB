@@ -1,8 +1,7 @@
 import { initializeApp } from "firebase/app";
 //import { getAnalytics } from "firebase/analytics";
 import { getFirestore } from "firebase/firestore";
-import { initializeAuth, getAuth, getReactNativePersistence } from 'firebase/auth';
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { initializeAuth, getAuth } from 'firebase/auth';
 
 
 EXPO_PUBLIC_FIREBASE_CONFIG={
@@ -20,6 +19,4 @@ const firebaseConfig = EXPO_PUBLIC_FIREBASE_CONFIG
 export const FIREBASE_APP = initializeApp(firebaseConfig);
 //export const ANALYTICS = getAnalytics(FIREBASE_APP);
 export const FIRESTORE = getFirestore(FIREBASE_APP)
-export const FIREBASE_AUTH = initializeAuth( FIREBASE_APP, {
-  persistence: getReactNativePersistence(AsyncStorage)
-})
+export const FIREBASE_AUTH = initializeAuth( FIREBASE_APP )
