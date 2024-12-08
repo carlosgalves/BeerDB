@@ -1,36 +1,62 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  StyleSheet,
+  View,
+  ScrollView,
+  ActivityIndicator,
+  Pressable
+} from 'react-native';
+import { Link, useRouter } from 'expo-router';
 import BeerCard from '../../components/BeerCard';
-import { FIRESTORE } from '../../firebaseConfig'
+import { FIRESTORE, FIREBASE_AUTH } from '../../firebaseConfig';
 import { collection, getDocs } from 'firebase/firestore';
+import { onAuthStateChanged, FirebaseAuthTypes } from 'firebase/auth';
 import { useFocusEffect } from '@react-navigation/native';
-
 
 export default function HomeScreen() {
 
-  const [beers, setBeers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [initializing, setInitializing] = useState(true);
+  const [user, setUser] = useState<FirebaseAuthTypes.User | null>();
+  const [beers, setBeers] = useState([]);
+  const router = useRouter();
 
-  async function fetchBeers() {
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(FIREBASE_AUTH, (user) => {
+      setUser(user);
+      if (initializing) setInitializing(false);
+      if (!user) {
+        router.replace('/auth');
+      }
+    });
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [initializing]);
+
+  const fetchBeers = React.useCallback(async () => {
+    setLoading(true);
     try {
       const querySnapshot = await getDocs(collection(FIRESTORE, 'beers'));
-      const beerData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const beerData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setBeers(beerData);
     } catch (error) {
-      console.error("Error fetching beers:", error);
+      console.error('Error fetching beers:', error);
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useFocusEffect(
     React.useCallback(() => {
-      setLoading(true);
       fetchBeers();
-    }, [])
+    }, [fetchBeers])
   );
 
-  if (loading) {
+  if (loading || initializing) {
     return <ActivityIndicator size="large" color="#0000ff" />;
   }
 
@@ -38,12 +64,19 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {beers.map((beer) => (
-          <BeerCard
+          <Link push href={{
+            pathname: '/beer-details/[id]',
+            params: {
+              id: beer.id,
+            },
+            }}
+            asChild
             key={beer.id}
-            name={beer.name}
-            brewery={beer.brewery}
-            country={beer.country}
-          />
+          >
+            <Pressable>
+              <BeerCard {...beer} />
+            </Pressable>
+          </Link>
         ))}
       </ScrollView>
     </View>

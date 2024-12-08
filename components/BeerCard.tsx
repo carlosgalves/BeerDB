@@ -9,10 +9,11 @@ interface BeerCardProps {
   id: string;
   brewery: string;
   country: string;
+  image: string;
 }
 
 
-const BeerCard: React.FC<BeerCardPsrops> = ({ name, brewery, country }) => {
+const BeerCard: React.FC<BeerCardPsrops> = ({ name, brewery, country, image }) => {
   return (
     <Card style={styles.card}>
       <Card.Title
@@ -29,7 +30,11 @@ const BeerCard: React.FC<BeerCardPsrops> = ({ name, brewery, country }) => {
       </View>
       <View style={styles.coverContainer}>
         <Image
-          source={beerImages[name]}
+          source={
+            image
+              ? { uri: `data:image/png;base64,${image}` }
+              : require('../assets/images/beer/unknown.png')
+          }
           style={styles.image}
           resizeMode="contain"
         />
