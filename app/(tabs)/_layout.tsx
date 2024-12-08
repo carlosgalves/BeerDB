@@ -30,21 +30,24 @@ export default function TabLayout() {
         name="index"
         options={{
           title: '',
+          headerShown: false,
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
         }}
       />
       <Tabs.Screen
         name="beer-details/[id]"
         options={{
+          headerShown: true,
           title: '',
-           href: null
+          href: null
         }}
       />
       <Tabs.Screen
         name="auth"
         options={{
           title: '',
-           href: null
+          headerShown: false,
+          href: null
         }}
       />
 
