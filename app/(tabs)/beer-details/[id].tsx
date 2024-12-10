@@ -5,11 +5,21 @@ import { FIRESTORE, FIREBASE_AUTH } from '../../../firebaseConfig';
 import { doc, getDoc, updateDoc, collection, setDoc } from 'firebase/firestore';
 import { flagImages, beerImages} from '../../../data/mappers/imageMapper'
 import { Ionicons } from '@expo/vector-icons';
+import { Rating } from 'react-native-ratings';
+
 
 export default function BeerDetails() {
   const { id } = useLocalSearchParams();
-  const [beer, setBeer] = useState();
   const [loading, setLoading] = useState(true);
+  const [beer, setBeer] = useState();
+  const [userOverallRating, setUserOverallRating] = useState(null);
+  const [userAromaRating, setUserAromaRating] = useState(null);
+  const [userTasteRating, setUserTasteRating] = useState(null);
+  const [userAfterTasteRating, setUserAfterTasteRating] = useState(null);
+  const [globalOverallRating, setGlobalOverallRating] = useState(null);
+  const [globalAromaRating, setGlobalAromaRating] = useState(null);
+  const [globalTasteRating, setGlobalTasteRating] = useState(null);
+  const [globalAfterTasteRating, setGlobalAfterTasteRating] = useState(null);
 
   const navigation = useNavigation();
 
@@ -94,6 +104,20 @@ export default function BeerDetails() {
       <Text style={styles.detail}>Aroma:</Text>
       <Text style={styles.detail}>Taste:</Text>
       <Text style={styles.detail}>Aftertaste:</Text>
+      <Rating
+        showRating
+        type="star"
+        imageSize={40}
+        ratingCount={5}
+        minValue={0}
+        startingValue={0}
+        jumpValue={0.5}
+        fractions={2}
+        onStartRating={null}
+        onSwipeRating={null}
+        onFinishRating={null}
+        style={{ paddingVertical: 10 }}
+      />
     </ScrollView>
     </>
   );
