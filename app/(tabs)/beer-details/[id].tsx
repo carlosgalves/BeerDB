@@ -24,7 +24,14 @@ export default function BeerDetails() {
   const userId = getAuth().currentUser?.uid;
 
   useEffect(() => {
+    setLoading(true)
     async function fetchBeerData() {
+      setUserRatings({
+        overallRating: null,
+        tasteRating: null,
+        aromaRating: null,
+        afterTasteRating: null,
+      });
       try {
         const beerRef = doc(FIRESTORE, 'beers', id);
         const beerDoc = await getDoc(beerRef);
@@ -83,7 +90,6 @@ export default function BeerDetails() {
 
       await setDoc(userRatingRef, { userId, aromaRating, tasteRating, afterTasteRating, overallRating }, { merge: true });
 
-      console.log('Ratings successfully submitted:', userRatings);
     } catch (error) {
       console.error('Error submitting rating:', error);
     }
