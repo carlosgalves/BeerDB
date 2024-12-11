@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image, Button } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image, Button, Alert } from 'react-native';
 import { useLocalSearchParams, Stack, useNavigation } from 'expo-router';
 import { FIRESTORE, FIREBASE_AUTH } from '../../../firebaseConfig';
 import { doc, getDoc, updateDoc, collection, setDoc } from 'firebase/firestore';
@@ -13,10 +13,12 @@ export default function BeerDetails() {
   const { id } = useLocalSearchParams();
   const [loading, setLoading] = useState(true);
   const [beer, setBeer] = useState();
-  const [userOverallRating, setUserOverallRating] = useState(null);
-  const [userAromaRating, setUserAromaRating] = useState(null);
-  const [userTasteRating, setUserTasteRating] = useState(null);
-  const [userAfterTasteRating, setUserAfterTasteRating] = useState(null);
+  const [userRatings, setUserRatings] = useState({
+    overallRating: null,
+    tasteRating: null,
+    aromaRating: null,
+    afterTasteRating: null,
+  });
 
   const navigation = useNavigation();
   const userId = getAuth().currentUser?.uid;
@@ -35,7 +37,8 @@ export default function BeerDetails() {
           const userRatingDoc = await getDoc(userRatingRef);
 
           if (userRatingDoc.exists()) {
-            setUserOverallRating(userRatingDoc.data().overallRating);
+            const { tasteRating, aromaRating, afterTasteRating, overallRating } = userRatingDoc.data();
+            setUserRatings({ tasteRating, aromaRating, afterTasteRating, overallRating });
           }
         } else {
           console.log('No such beer!');
@@ -63,14 +66,24 @@ export default function BeerDetails() {
     }
   }
 
-  const handleRatingSubmit = async (rating) => {
+  const handleRatingSubmit = async (category, rating) => {
+    const { aromaRating, tasteRating, afterTasteRating } = userRatings;
+
+    if (!aromaRating || !tasteRating || !afterTasteRating) {
+      console.error('All ratings (aroma, taste, afterTaste) must be provided before submission.');
+      alert('Tens de classificar todos os parâmetros (aroma, sabor e fim de boca) individualmente de modo a submeter a classificação final.');
+      return;
+    }
+
     try {
       const beerRef = doc(FIRESTORE, 'beers', id);
       const userRatingRef = doc(beerRef, 'ratings', userId);
 
-      await setDoc(userRatingRef, { userId, overallRating: rating }, { merge: true });
+      const overallRating = (aromaRating + tasteRating + afterTasteRating) / 3;
 
-      setUserOverallRating(rating);
+      await setDoc(userRatingRef, { userId, aromaRating, tasteRating, afterTasteRating, overallRating }, { merge: true });
+
+      console.log('Ratings successfully submitted:', userRatings);
     } catch (error) {
       console.error('Error submitting rating:', error);
     }
@@ -132,24 +145,80 @@ export default function BeerDetails() {
       <Text style={styles.type}>Type: {type}</Text>
       <Text style={styles.description}>Description: {description}</Text>
       <Text style={styles.alcohol}>ABV: {abv}%</Text>
-      <Text style={styles.rating}>Overall Rating: {overallRating} | {userOverallRating}</Text>
+      <Text style={styles.rating}>Overall Rating: {overallRating} | {userRatings.overallRating}</Text>
       <Text style={styles.tags}>Tags: {tags?.join(', ')}</Text>
-      <Text style={styles.detail}>Aroma: {aromaRating}</Text>
-      <Text style={styles.detail}>Taste: {tasteRating}</Text>
-      <Text style={styles.detail}>Aftertaste: {afterTasteRating}</Text>
+
+      <Rating
+        showRating
+        readOnly
+        type="star"
+        imageSize={40}
+        ratingCount={5}
+        minValue={0}
+        startingValue={userRatings.overallRating}
+        jumpValue={0.5}
+        fractions={2}
+        onStartRating={null}
+        onSwipeRating={null}
+        onFinishRating={null}
+        style={{ paddingVertical: 10 }}
+      />
+
+      <Text style={styles.detail}>Aroma: {userRatings.aromaRating}</Text>
       <Rating
         showRating
         type="star"
         imageSize={40}
         ratingCount={5}
         minValue={0}
-        startingValue={userOverallRating}
+        startingValue={userRatings.aromaRating}
         jumpValue={0.5}
         fractions={2}
         onStartRating={null}
         onSwipeRating={null}
-        onFinishRating={handleRatingSubmit}
+        onFinishRating={(rating) =>
+          setUserRatings((prev) => ({ ...prev, aromaRating: rating }))
+        }
         style={{ paddingVertical: 10 }}
+      />
+      <Text style={styles.detail}>Taste: {userRatings.tasteRating}</Text>
+      <Rating
+        showRating
+        type="star"
+        imageSize={40}
+        ratingCount={5}
+        minValue={0}
+        startingValue={userRatings.tasteRating}
+        jumpValue={0.5}
+        fractions={2}
+        onStartRating={null}
+        onSwipeRating={null}
+        onFinishRating={(rating) =>
+          setUserRatings((prev) => ({ ...prev, tasteRating: rating }))
+        }
+        style={{ paddingVertical: 10 }}
+      />
+      <Text style={styles.detail}>Aftertaste: {userRatings.afterTasteRating}</Text>
+      <Rating
+        showRating
+        type="star"
+        imageSize={40}
+        ratingCount={5}
+        minValue={0}
+        startingValue={userRatings.afterTasteRating}
+        jumpValue={0.5}
+        fractions={2}
+        onStartRating={null}
+        onSwipeRating={null}
+        onFinishRating={(rating) =>
+          setUserRatings((prev) => ({ ...prev, afterTasteRating: rating }))
+        }
+        style={{ paddingVertical: 10 }}
+      />
+      <Button
+        title="Submit Ratings"
+        onPress={handleRatingSubmit}
+        disabled={!userRatings.aromaRating || !userRatings.tasteRating || !userRatings.afterTasteRating}
       />
     </ScrollView>
     </>
