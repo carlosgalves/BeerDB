@@ -6,6 +6,7 @@ import { doc, getDoc, updateDoc, collection, setDoc } from 'firebase/firestore';
 import { flagImages, beerImages} from '../../../data/mappers/imageMapper'
 import { Ionicons } from '@expo/vector-icons';
 import { Rating } from 'react-native-ratings';
+import { getAuth } from 'firebase/auth';
 
 
 export default function BeerDetails() {
@@ -16,13 +17,9 @@ export default function BeerDetails() {
   const [userAromaRating, setUserAromaRating] = useState(null);
   const [userTasteRating, setUserTasteRating] = useState(null);
   const [userAfterTasteRating, setUserAfterTasteRating] = useState(null);
-  const [globalOverallRating, setGlobalOverallRating] = useState(null);
-  const [globalAromaRating, setGlobalAromaRating] = useState(null);
-  const [globalTasteRating, setGlobalTasteRating] = useState(null);
-  const [globalAfterTasteRating, setGlobalAfterTasteRating] = useState(null);
 
   const navigation = useNavigation();
-
+  const userId = getAuth().currentUser?.uid;
 
   useEffect(() => {
     async function fetchBeerData() {
@@ -33,6 +30,13 @@ export default function BeerDetails() {
         if (beerDoc.exists()) {
           const beer = { id: beerDoc.id, ...beerDoc.data() };
           setBeer(beer);
+
+          const userRatingRef = doc(beerRef, 'ratings', userId);
+          const userRatingDoc = await getDoc(userRatingRef);
+
+          if (userRatingDoc.exists()) {
+            setUserOverallRating(userRatingDoc.data().overallRating);
+          }
         } else {
           console.log('No such beer!');
         }
@@ -45,6 +49,32 @@ export default function BeerDetails() {
     fetchBeerData();
   }, [id]);
 
+  async function fetchUserRating(beerId) {
+    const userId = auth.currentUser?.uid;
+    if (!userId) return null;
+
+    const ratingRef = doc(FIRESTORE, 'beers', beerId, 'ratings', userId);
+
+    try {
+      const ratingDoc = await getDoc(ratingRef);
+      return ratingDoc.exists() ? ratingDoc.data() : null;
+    } catch (error) {
+      console.error('Error fetching rating:', error);
+    }
+  }
+
+  const handleRatingSubmit = async (rating) => {
+    try {
+      const beerRef = doc(FIRESTORE, 'beers', id);
+      const userRatingRef = doc(beerRef, 'ratings', userId);
+
+      await setDoc(userRatingRef, { userId, overallRating: rating }, { merge: true });
+
+      setUserOverallRating(rating);
+    } catch (error) {
+      console.error('Error submitting rating:', error);
+    }
+  };
 
   if (loading) {
     return <ActivityIndicator size="large" color="#0000ff" />;
@@ -58,7 +88,10 @@ export default function BeerDetails() {
     );
   }
 
-  const { name, brewery, country, type, description, abv, tags, image } = beer;
+  const {
+    name, brewery, country, type, description, abv, tags, image,
+    overallRating, aromaRating, tasteRating, afterTasteRating
+  } = beer;
 
   return (
     <>
@@ -99,23 +132,23 @@ export default function BeerDetails() {
       <Text style={styles.type}>Type: {type}</Text>
       <Text style={styles.description}>Description: {description}</Text>
       <Text style={styles.alcohol}>ABV: {abv}%</Text>
-      <Text style={styles.rating}>Overall Rating:</Text>
+      <Text style={styles.rating}>Overall Rating: {overallRating} | {userOverallRating}</Text>
       <Text style={styles.tags}>Tags: {tags?.join(', ')}</Text>
-      <Text style={styles.detail}>Aroma:</Text>
-      <Text style={styles.detail}>Taste:</Text>
-      <Text style={styles.detail}>Aftertaste:</Text>
+      <Text style={styles.detail}>Aroma: {aromaRating}</Text>
+      <Text style={styles.detail}>Taste: {tasteRating}</Text>
+      <Text style={styles.detail}>Aftertaste: {afterTasteRating}</Text>
       <Rating
         showRating
         type="star"
         imageSize={40}
         ratingCount={5}
         minValue={0}
-        startingValue={0}
+        startingValue={userOverallRating}
         jumpValue={0.5}
         fractions={2}
         onStartRating={null}
         onSwipeRating={null}
-        onFinishRating={null}
+        onFinishRating={handleRatingSubmit}
         style={{ paddingVertical: 10 }}
       />
     </ScrollView>
