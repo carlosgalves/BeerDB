@@ -89,28 +89,33 @@ export default function BeerDetails() {
     }
   }
 
-  const handleRatingSubmit = async (category, rating) => {
-    const { aromaRating, tasteRating, afterTasteRating } = userRatings;
+  const updateRating = async (category, rating) => {
+    setUserRatings(prev => {
+      const updatedRatings = { ...prev, [category]: rating };
 
-    if (!aromaRating || !tasteRating || !afterTasteRating) {
-      console.error('All ratings (aroma, taste, afterTaste) must be provided before submission.');
-      alert('Tens de classificar todos os parâmetros (aroma, sabor e fim de boca) individualmente de modo a submeter a classificação final.');
-      return;
-    }
+      const { aromaRating, tasteRating, afterTasteRating } = updatedRatings;
 
-    try {
-      const beerRef = doc(FIRESTORE, 'beers', id);
-      const userRatingRef = doc(beerRef, 'ratings', userId);
+      if (aromaRating && tasteRating && afterTasteRating) {
+        try {
+          const beerRef = doc(FIRESTORE, 'beers', id);
+          const userRatingRef = doc(beerRef, 'ratings', userId);
 
-      const overallRating = (aromaRating + tasteRating + afterTasteRating) / 3;
+          setDoc(userRatingRef,
+            { userId, aromaRating, tasteRating, afterTasteRating, overallRating },
+            { merge: true }
+          );
 
-      await setDoc(userRatingRef, { userId, aromaRating, tasteRating, afterTasteRating, overallRating }, { merge: true });
+          const overallRating = (aromaRating + tasteRating + afterTasteRating) / 3;
+          updatedRatings.overallRating = overallRating;
 
-      setUserRatings((prev) => ({ ...prev, overallRating: overallRating }))
-
-    } catch (error) {
-      console.error('Error submitting rating:', error);
-    }
+          Alert.alert('Success', 'Your rating has been updated!');
+        } catch (error) {
+          console.error('Error updating rating:', error);
+          Alert.alert('Error', 'There was an issue updating your rating. Please try again later.');
+        }
+      }
+      return updatedRatings;
+    });
   };
 
   if (loading) {
@@ -197,11 +202,7 @@ export default function BeerDetails() {
           startingValue={userRatings.aromaRating}
           jumpValue={0.5}
           fractions={2}
-          onStartRating={null}
-          onSwipeRating={null}
-          onFinishRating={(rating) =>
-            setUserRatings((prev) => ({ ...prev, aromaRating: rating }))
-          }
+          onFinishRating={(rating) => updateRating('aromaRating', rating)}
           style={{ paddingVertical: 10 }}
         />
         <Text style={styles.detail}>Taste: {userRatings.tasteRating}</Text>
@@ -214,11 +215,7 @@ export default function BeerDetails() {
           startingValue={userRatings.tasteRating}
           jumpValue={0.5}
           fractions={2}
-          onStartRating={null}
-          onSwipeRating={null}
-          onFinishRating={(rating) =>
-            setUserRatings((prev) => ({ ...prev, tasteRating: rating }))
-          }
+          onFinishRating={(rating) => updateRating('tasteRating', rating)}
           style={{ paddingVertical: 10 }}
         />
         <Text style={styles.detail}>Aftertaste: {userRatings.afterTasteRating}</Text>
@@ -231,17 +228,8 @@ export default function BeerDetails() {
           startingValue={userRatings.afterTasteRating}
           jumpValue={0.5}
           fractions={2}
-          onStartRating={null}
-          onSwipeRating={null}
-          onFinishRating={(rating) =>
-            setUserRatings((prev) => ({ ...prev, afterTasteRating: rating }))
-          }
+          onFinishRating={(rating) => updateRating('afterTasteRating', rating)}
           style={{ paddingVertical: 10 }}
-        />
-        <Button
-          title="Submit Ratings"
-          onPress={handleRatingSubmit}
-          disabled={!userRatings.aromaRating || !userRatings.tasteRating || !userRatings.afterTasteRating}
         />
       </>
     )}
