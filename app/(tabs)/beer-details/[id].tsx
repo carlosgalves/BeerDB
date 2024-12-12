@@ -13,6 +13,7 @@ export default function BeerDetails() {
   const { id } = useLocalSearchParams();
   const [loading, setLoading] = useState(true);
   const [beer, setBeer] = useState();
+  const [showRatingFields, setShowRatingFields] = useState(false);
   const [userRatings, setUserRatings] = useState({
     overallRating: null,
     tasteRating: null,
@@ -25,6 +26,13 @@ export default function BeerDetails() {
 
   useEffect(() => {
     setLoading(true)
+
+    if (!userRatings || Object.values(userRatings).every(value => value === null || 0)) {
+      setShowRatingFields(false);
+    } else {
+      setShowRatingFields(true);
+    }
+
     async function fetchBeerData() {
       setUserRatings({
         overallRating: null,
@@ -59,6 +67,14 @@ export default function BeerDetails() {
     fetchBeerData();
   }, [id]);
 
+  useEffect(() => {
+    if (Object.values(userRatings).every(value => value === null || 0)) {
+      setShowRatingFields(false);
+    } else {
+      setShowRatingFields(true);
+    }
+  }, [userRatings]);
+
   async function fetchUserRating(beerId) {
     const userId = auth.currentUser?.uid;
     if (!userId) return null;
@@ -89,6 +105,8 @@ export default function BeerDetails() {
       const overallRating = (aromaRating + tasteRating + afterTasteRating) / 3;
 
       await setDoc(userRatingRef, { userId, aromaRating, tasteRating, afterTasteRating, overallRating }, { merge: true });
+
+      setUserRatings((prev) => ({ ...prev, overallRating: overallRating }))
 
     } catch (error) {
       console.error('Error submitting rating:', error);
@@ -151,12 +169,10 @@ export default function BeerDetails() {
       <Text style={styles.type}>Type: {type}</Text>
       <Text style={styles.description}>Description: {description}</Text>
       <Text style={styles.alcohol}>ABV: {abv}%</Text>
-      <Text style={styles.rating}>Overall Rating: {overallRating} | {userRatings.overallRating}</Text>
       <Text style={styles.tags}>Tags: {tags?.join(', ')}</Text>
-
+      <Text style={styles.rating}>Overall Rating: {overallRating} | {userRatings.overallRating}</Text>
       <Rating
-        showRating
-        readOnly
+        readonly
         type="star"
         imageSize={40}
         ratingCount={5}
@@ -164,68 +180,71 @@ export default function BeerDetails() {
         startingValue={userRatings.overallRating}
         jumpValue={0.5}
         fractions={2}
-        onStartRating={null}
-        onSwipeRating={null}
-        onFinishRating={null}
         style={{ paddingVertical: 10 }}
       />
-
-      <Text style={styles.detail}>Aroma: {userRatings.aromaRating}</Text>
-      <Rating
-        showRating
-        type="star"
-        imageSize={40}
-        ratingCount={5}
-        minValue={0}
-        startingValue={userRatings.aromaRating}
-        jumpValue={0.5}
-        fractions={2}
-        onStartRating={null}
-        onSwipeRating={null}
-        onFinishRating={(rating) =>
-          setUserRatings((prev) => ({ ...prev, aromaRating: rating }))
-        }
-        style={{ paddingVertical: 10 }}
-      />
-      <Text style={styles.detail}>Taste: {userRatings.tasteRating}</Text>
-      <Rating
-        showRating
-        type="star"
-        imageSize={40}
-        ratingCount={5}
-        minValue={0}
-        startingValue={userRatings.tasteRating}
-        jumpValue={0.5}
-        fractions={2}
-        onStartRating={null}
-        onSwipeRating={null}
-        onFinishRating={(rating) =>
-          setUserRatings((prev) => ({ ...prev, tasteRating: rating }))
-        }
-        style={{ paddingVertical: 10 }}
-      />
-      <Text style={styles.detail}>Aftertaste: {userRatings.afterTasteRating}</Text>
-      <Rating
-        showRating
-        type="star"
-        imageSize={40}
-        ratingCount={5}
-        minValue={0}
-        startingValue={userRatings.afterTasteRating}
-        jumpValue={0.5}
-        fractions={2}
-        onStartRating={null}
-        onSwipeRating={null}
-        onFinishRating={(rating) =>
-          setUserRatings((prev) => ({ ...prev, afterTasteRating: rating }))
-        }
-        style={{ paddingVertical: 10 }}
-      />
-      <Button
-        title="Submit Ratings"
-        onPress={handleRatingSubmit}
-        disabled={!userRatings.aromaRating || !userRatings.tasteRating || !userRatings.afterTasteRating}
-      />
+      {!showRatingFields && (
+        <Button title="Rate" onPress={() => setShowRatingFields(true)} />
+      )}
+      {showRatingFields && (
+        <>
+        <Text style={[styles.detail]}>Aroma: {userRatings.aromaRating}</Text>
+        <Rating
+          showRating
+          type="star"
+          imageSize={40}
+          ratingCount={5}
+          minValue={0}
+          startingValue={userRatings.aromaRating}
+          jumpValue={0.5}
+          fractions={2}
+          onStartRating={null}
+          onSwipeRating={null}
+          onFinishRating={(rating) =>
+            setUserRatings((prev) => ({ ...prev, aromaRating: rating }))
+          }
+          style={{ paddingVertical: 10 }}
+        />
+        <Text style={styles.detail}>Taste: {userRatings.tasteRating}</Text>
+        <Rating
+          showRating
+          type="star"
+          imageSize={40}
+          ratingCount={5}
+          minValue={0}
+          startingValue={userRatings.tasteRating}
+          jumpValue={0.5}
+          fractions={2}
+          onStartRating={null}
+          onSwipeRating={null}
+          onFinishRating={(rating) =>
+            setUserRatings((prev) => ({ ...prev, tasteRating: rating }))
+          }
+          style={{ paddingVertical: 10 }}
+        />
+        <Text style={styles.detail}>Aftertaste: {userRatings.afterTasteRating}</Text>
+        <Rating
+          showRating
+          type="star"
+          imageSize={40}
+          ratingCount={5}
+          minValue={0}
+          startingValue={userRatings.afterTasteRating}
+          jumpValue={0.5}
+          fractions={2}
+          onStartRating={null}
+          onSwipeRating={null}
+          onFinishRating={(rating) =>
+            setUserRatings((prev) => ({ ...prev, afterTasteRating: rating }))
+          }
+          style={{ paddingVertical: 10 }}
+        />
+        <Button
+          title="Submit Ratings"
+          onPress={handleRatingSubmit}
+          disabled={!userRatings.aromaRating || !userRatings.tasteRating || !userRatings.afterTasteRating}
+        />
+      </>
+    )}
     </ScrollView>
     </>
   );
