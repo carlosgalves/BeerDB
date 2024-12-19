@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image, Button, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image, Button, Alert, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, Stack, useNavigation } from 'expo-router';
 import { FIRESTORE, FIREBASE_AUTH } from '../../../firebaseConfig';
 import { doc, getDoc, updateDoc, collection, setDoc } from 'firebase/firestore';
@@ -28,16 +28,8 @@ export default function BeerDetails() {
   const userId = user.uid
   const isUserAnonymous = user.isAnonymous
 
-  console.log(userRatings)
-
   useEffect(() => {
     setLoading(true)
-
-    if (!userRatings || Object.values(userRatings).every(value => value === null || 0)) {
-      setShowRatingFields(false);
-    } else {
-      setShowRatingFields(true);
-    }
 
     async function fetchBeerData() {
       setUserRatings({
@@ -60,7 +52,6 @@ export default function BeerDetails() {
           if (userRatingDoc.exists()) {
             const { tasteRating, aromaRating, afterTasteRating, overallRating } = userRatingDoc.data();
             setUserRatings({ tasteRating, aromaRating, afterTasteRating, overallRating });
-            setRatingType('user');
           }
         } else {
           console.log('No such beer!');
@@ -76,9 +67,11 @@ export default function BeerDetails() {
 
   useEffect(() => {
     if (Object.values(userRatings).every(value => value === null || 0)) {
-      setShowRatingFields(false);
+      setShowRatingFields(false)
+      setRatingType('global')
     } else {
-      setShowRatingFields(true);
+      setShowRatingFields(true)
+      setRatingType('user')
     }
   }, [userRatings]);
 
@@ -182,7 +175,7 @@ export default function BeerDetails() {
       <Text style={styles.description}>Description: {description}</Text>
       <Text style={styles.alcohol}>ABV: {abv}%</Text>
       <Text style={styles.tags}>Tags: {tags?.join(', ')}</Text>
-      <Text style={styles.rating}>Overall Rating: {overallRating} | {userRatings.overallRating}</Text>
+      <Text style={styles.rating}>Overall Rating: {userRatings.overallRating} | {overallRating}</Text>
       <Rating
         readonly
         type="star"
@@ -199,16 +192,32 @@ export default function BeerDetails() {
       <Text style={styles.detail}>Taste: {userRatings.tasteRating} | {tasteRating}</Text>
       <Text style={styles.detail}>Aftertaste: {userRatings.afterTasteRating} | {afterTasteRating}</Text>
 
-      { (!showRatingFields && !isUserAnonymous) && (
-        <Button title="Rate" onPress={() => setShowRatingFields(true)} />
+      { (!showRatingFields) && (
+        <TouchableOpacity
+          onPress={ () => {
+            setShowRatingFields(true)
+            setRatingType('user')}
+          }
+          style={[
+              styles.button,
+              isUserAnonymous && styles.disabledButton,
+          ]}
+          disabled={isUserAnonymous}
+        >
+          <Text style={isUserAnonymous ? styles.disabledText : styles.buttonText}>
+            Rate
+          </Text>
+        </TouchableOpacity>
       )}
 
       <SwitchSelector
+        disabled={isUserAnonymous}
         options={[
           { label: "User", value: "user", customIcon: "", disabled: isUserAnonymous || !Object.values(userRatings).some(value => value) },
-          { label: "global", value: "global", customIcon: "" }
+          { label: "Global", value: "global", customIcon: "" }
         ]}
-        initial={userRatings && Object.values(userRatings).some(value => value) ? 0 : 1}
+        initial={ratingType === 'user' ? 0 : 1}
+        value={ratingType === 'user' ? 0 : 1}
         onPress={(value) => setRatingType(value)}
       />
 
@@ -322,4 +331,20 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
   },
+  button: {
+    backgroundColor: '#007bff',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  disabledButton: {
+    backgroundColor: '#d3d3d3',
+  },
+  disabledText: {
+    color: '#a9a9a9',
+  }
 });
