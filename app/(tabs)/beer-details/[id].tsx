@@ -21,8 +21,10 @@ export default function BeerDetails() {
     afterTasteRating: null,
   });
 
-  const navigation = useNavigation();
-  const userId = getAuth().currentUser?.uid;
+  const navigation = useNavigation()
+  const user = getAuth().currentUser
+  const userId = user.uid
+  const isUserAnonymous = user.isAnonymous
 
   useEffect(() => {
     setLoading(true)
@@ -76,7 +78,6 @@ export default function BeerDetails() {
   }, [userRatings]);
 
   async function fetchUserRating(beerId) {
-    const userId = auth.currentUser?.uid;
     if (!userId) return null;
 
     const ratingRef = doc(FIRESTORE, 'beers', beerId, 'ratings', userId);
@@ -187,7 +188,7 @@ export default function BeerDetails() {
         fractions={2}
         style={{ paddingVertical: 10 }}
       />
-      {!showRatingFields && (
+      { (!showRatingFields && !isUserAnonymous) && (
         <Button title="Rate" onPress={() => setShowRatingFields(true)} />
       )}
       {showRatingFields && (
