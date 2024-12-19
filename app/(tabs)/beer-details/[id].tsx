@@ -195,11 +195,13 @@ export default function BeerDetails() {
         style={{ paddingVertical: 10 }}
       />
 
-
       <Text style={[styles.detail]}>Aroma: {userRatings.aromaRating} | {aromaRating}</Text>
       <Text style={styles.detail}>Taste: {userRatings.tasteRating} | {tasteRating}</Text>
       <Text style={styles.detail}>Aftertaste: {userRatings.afterTasteRating} | {afterTasteRating}</Text>
 
+      { (!showRatingFields && !isUserAnonymous) && (
+        <Button title="Rate" onPress={() => setShowRatingFields(true)} />
+      )}
 
       <SwitchSelector
         options={[
@@ -209,8 +211,9 @@ export default function BeerDetails() {
         initial={userRatings && Object.values(userRatings).some(value => value) ? 0 : 1}
         onPress={(value) => setRatingType(value)}
       />
+
       <Rating
-        readonly
+        readonly={!showRatingFields || ratingType == 'global'}
         type="star"
         imageSize={40}
         ratingCount={5}
@@ -218,10 +221,11 @@ export default function BeerDetails() {
         startingValue={ratingType==='user' ? userRatings.aromaRating : aromaRating}
         jumpValue={0.5}
         fractions={2}
+        onFinishRating={(rating) => updateRating('aromaRating', rating)}
         style={{ paddingVertical: 10 }}
       />
       <Rating
-        readonly
+        readonly={!showRatingFields || ratingType == 'global'}
         type="star"
         imageSize={40}
         ratingCount={5}
@@ -229,10 +233,11 @@ export default function BeerDetails() {
         startingValue={ratingType==='user' ? userRatings.tasteRating : tasteRating}
         jumpValue={0.5}
         fractions={2}
+        onFinishRating={(rating) => updateRating('tasteRating', rating)}
         style={{ paddingVertical: 10 }}
       />
       <Rating
-        readonly
+        readonly={!showRatingFields || ratingType == 'global'}
         type="star"
         imageSize={40}
         ratingCount={5}
@@ -240,52 +245,10 @@ export default function BeerDetails() {
         startingValue={ratingType==='user' ? userRatings.afterTasteRating : afterTasteRating}
         jumpValue={0.5}
         fractions={2}
+        onFinishRating={(rating) => updateRating('afterTasteRating', rating)}
         style={{ paddingVertical: 10 }}
       />
 
-      { (!showRatingFields && !isUserAnonymous) && (
-        <Button title="Rate" onPress={() => setShowRatingFields(true)} />
-      )}
-      {showRatingFields && (
-        <>
-        <Rating
-          showRating
-          type="star"
-          imageSize={40}
-          ratingCount={5}
-          minValue={0}
-          startingValue={userRatings.aromaRating}
-          jumpValue={0.5}
-          fractions={2}
-          onFinishRating={(rating) => updateRating('aromaRating', rating)}
-          style={{ paddingVertical: 10 }}
-        />
-        <Rating
-          showRating
-          type="star"
-          imageSize={40}
-          ratingCount={5}
-          minValue={0}
-          startingValue={userRatings.tasteRating}
-          jumpValue={0.5}
-          fractions={2}
-          onFinishRating={(rating) => updateRating('tasteRating', rating)}
-          style={{ paddingVertical: 10 }}
-        />
-        <Rating
-          showRating
-          type="star"
-          imageSize={40}
-          ratingCount={5}
-          minValue={0}
-          startingValue={userRatings.afterTasteRating}
-          jumpValue={0.5}
-          fractions={2}
-          onFinishRating={(rating) => updateRating('afterTasteRating', rating)}
-          style={{ paddingVertical: 10 }}
-        />
-      </>
-    )}
     </ScrollView>
     </>
   );
