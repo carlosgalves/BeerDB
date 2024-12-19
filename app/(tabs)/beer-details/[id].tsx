@@ -4,6 +4,7 @@ import { useLocalSearchParams, Stack, useNavigation } from 'expo-router';
 import { FIRESTORE, FIREBASE_AUTH } from '../../../firebaseConfig';
 import { doc, getDoc, updateDoc, collection, setDoc } from 'firebase/firestore';
 import { flagImages, beerImages} from '../../../data/mappers/imageMapper'
+import SwitchSelector from 'react-native-switch-selector'
 import { Ionicons } from '@expo/vector-icons';
 import { Rating } from 'react-native-ratings';
 import { getAuth } from 'firebase/auth';
@@ -20,11 +21,14 @@ export default function BeerDetails() {
     aromaRating: null,
     afterTasteRating: null,
   });
+  const [ratingType, setRatingType] = useState('global')
 
   const navigation = useNavigation()
   const user = getAuth().currentUser
   const userId = user.uid
   const isUserAnonymous = user.isAnonymous
+
+  console.log(userRatings)
 
   useEffect(() => {
     setLoading(true)
@@ -56,6 +60,7 @@ export default function BeerDetails() {
           if (userRatingDoc.exists()) {
             const { tasteRating, aromaRating, afterTasteRating, overallRating } = userRatingDoc.data();
             setUserRatings({ tasteRating, aromaRating, afterTasteRating, overallRating });
+            setRatingType('user');
           }
         } else {
           console.log('No such beer!');
@@ -101,12 +106,13 @@ export default function BeerDetails() {
           const beerRef = doc(FIRESTORE, 'beers', id);
           const userRatingRef = doc(beerRef, 'ratings', userId);
 
+          const overallRating = (aromaRating + tasteRating + afterTasteRating) / 3;
+
           setDoc(userRatingRef,
             { userId, aromaRating, tasteRating, afterTasteRating, overallRating },
             { merge: true }
           );
 
-          const overallRating = (aromaRating + tasteRating + afterTasteRating) / 3;
           updatedRatings.overallRating = overallRating;
 
           Alert.alert('Success', 'Your rating has been updated!');
@@ -188,12 +194,60 @@ export default function BeerDetails() {
         fractions={2}
         style={{ paddingVertical: 10 }}
       />
+
+
+      <Text style={[styles.detail]}>Aroma: {userRatings.aromaRating} | {aromaRating}</Text>
+      <Text style={styles.detail}>Taste: {userRatings.tasteRating} | {tasteRating}</Text>
+      <Text style={styles.detail}>Aftertaste: {userRatings.afterTasteRating} | {afterTasteRating}</Text>
+
+
+      <SwitchSelector
+        options={[
+          { label: "User", value: "user", customIcon: "", disabled: isUserAnonymous || !Object.values(userRatings).some(value => value) },
+          { label: "global", value: "global", customIcon: "" }
+        ]}
+        initial={userRatings && Object.values(userRatings).some(value => value) ? 0 : 1}
+        onPress={(value) => setRatingType(value)}
+      />
+      <Rating
+        readonly
+        type="star"
+        imageSize={40}
+        ratingCount={5}
+        minValue={0}
+        startingValue={ratingType==='user' ? userRatings.aromaRating : aromaRating}
+        jumpValue={0.5}
+        fractions={2}
+        style={{ paddingVertical: 10 }}
+      />
+      <Rating
+        readonly
+        type="star"
+        imageSize={40}
+        ratingCount={5}
+        minValue={0}
+        startingValue={ratingType==='user' ? userRatings.tasteRating : tasteRating}
+        jumpValue={0.5}
+        fractions={2}
+        style={{ paddingVertical: 10 }}
+      />
+      <Rating
+        readonly
+        type="star"
+        imageSize={40}
+        ratingCount={5}
+        minValue={0}
+        startingValue={ratingType==='user' ? userRatings.afterTasteRating : afterTasteRating}
+        jumpValue={0.5}
+        fractions={2}
+        style={{ paddingVertical: 10 }}
+      />
+
       { (!showRatingFields && !isUserAnonymous) && (
         <Button title="Rate" onPress={() => setShowRatingFields(true)} />
       )}
       {showRatingFields && (
         <>
-        <Text style={[styles.detail]}>Aroma: {userRatings.aromaRating}</Text>
         <Rating
           showRating
           type="star"
@@ -206,7 +260,6 @@ export default function BeerDetails() {
           onFinishRating={(rating) => updateRating('aromaRating', rating)}
           style={{ paddingVertical: 10 }}
         />
-        <Text style={styles.detail}>Taste: {userRatings.tasteRating}</Text>
         <Rating
           showRating
           type="star"
@@ -219,7 +272,6 @@ export default function BeerDetails() {
           onFinishRating={(rating) => updateRating('tasteRating', rating)}
           style={{ paddingVertical: 10 }}
         />
-        <Text style={styles.detail}>Aftertaste: {userRatings.afterTasteRating}</Text>
         <Rating
           showRating
           type="star"
