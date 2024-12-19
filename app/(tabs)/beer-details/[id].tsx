@@ -11,22 +11,22 @@ import { getAuth } from 'firebase/auth';
 
 
 export default function BeerDetails() {
-  const { id } = useLocalSearchParams();
-  const [loading, setLoading] = useState(true);
-  const [beer, setBeer] = useState();
-  const [showRatingFields, setShowRatingFields] = useState(false);
+  const { id } = useLocalSearchParams()
+  const navigation = useNavigation()
+  const user = getAuth().currentUser
+  const userId = user.uid
+  const isUserAnonymous = user.isAnonymous
+  const [loading, setLoading] = useState(true)
+  const [beer, setBeer] = useState()
   const [userRatings, setUserRatings] = useState({
     overallRating: null,
     tasteRating: null,
     aromaRating: null,
     afterTasteRating: null,
-  });
+  })
+  const [allowRating, setAllowRating] = useState(false)
   const [ratingType, setRatingType] = useState('global')
 
-  const navigation = useNavigation()
-  const user = getAuth().currentUser
-  const userId = user.uid
-  const isUserAnonymous = user.isAnonymous
 
   useEffect(() => {
     setLoading(true)
@@ -66,14 +66,16 @@ export default function BeerDetails() {
   }, [id]);
 
   useEffect(() => {
+    if (loading) return;
+
     if (Object.values(userRatings).every(value => value === null || 0)) {
-      setShowRatingFields(false)
+      setAllowRating(false)
       setRatingType('global')
     } else {
-      setShowRatingFields(true)
+      setAllowRating(true)
       setRatingType('user')
     }
-  }, [userRatings]);
+  }, [loading, userRatings]);
 
   async function fetchUserRating(beerId) {
     if (!userId) return null;
@@ -192,10 +194,10 @@ export default function BeerDetails() {
       <Text style={styles.detail}>Taste: {userRatings.tasteRating} | {tasteRating}</Text>
       <Text style={styles.detail}>Aftertaste: {userRatings.afterTasteRating} | {afterTasteRating}</Text>
 
-      { (!showRatingFields) && (
+      { (!allowRating) && (
         <TouchableOpacity
           onPress={ () => {
-            setShowRatingFields(true)
+            setAllowRating(true)
             setRatingType('user')}
           }
           style={[
@@ -222,7 +224,7 @@ export default function BeerDetails() {
       />
 
       <Rating
-        readonly={!showRatingFields || ratingType == 'global'}
+        readonly={!allowRating || ratingType == 'global'}
         type="star"
         imageSize={40}
         ratingCount={5}
@@ -234,7 +236,7 @@ export default function BeerDetails() {
         style={{ paddingVertical: 10 }}
       />
       <Rating
-        readonly={!showRatingFields || ratingType == 'global'}
+        readonly={!allowRating || ratingType == 'global'}
         type="star"
         imageSize={40}
         ratingCount={5}
@@ -246,7 +248,7 @@ export default function BeerDetails() {
         style={{ paddingVertical: 10 }}
       />
       <Rating
-        readonly={!showRatingFields || ratingType == 'global'}
+        readonly={!allowRating || ratingType == 'global'}
         type="star"
         imageSize={40}
         ratingCount={5}
