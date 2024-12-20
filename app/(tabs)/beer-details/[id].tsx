@@ -177,11 +177,13 @@ export default function BeerDetails() {
       <Text style={styles.description}>Description: {description}</Text>
       <Text style={styles.alcohol}>ABV: {abv}%</Text>
       <Text style={styles.tags}>Tags: {tags?.join(', ')}</Text>
-      <Text style={styles.rating}>Overall Rating: {userRatings.overallRating} | {overallRating}</Text>
+      <Text style={[styles.rating]}>
+        Overall Rating: {ratingType==='user' ? userRatings.overallRating : overallRating}
+      </Text>
       <Rating
         readonly
         type="star"
-        imageSize={40}
+        imageSize={50}
         ratingCount={5}
         minValue={0}
         startingValue={userRatings.overallRating}
@@ -189,10 +191,11 @@ export default function BeerDetails() {
         fractions={2}
         style={{ paddingVertical: 10 }}
       />
-
-      <Text style={[styles.detail]}>Aroma: {userRatings.aromaRating} | {aromaRating}</Text>
-      <Text style={styles.detail}>Taste: {userRatings.tasteRating} | {tasteRating}</Text>
-      <Text style={styles.detail}>Aftertaste: {userRatings.afterTasteRating} | {afterTasteRating}</Text>
+      { Object.values(userRatings).some(value => value) && (
+        <Text style={[styles.detail]}>
+          Global average: {overallRating}
+        </Text>
+      )}
 
       { (!allowRating) && (
         <TouchableOpacity
@@ -212,53 +215,70 @@ export default function BeerDetails() {
         </TouchableOpacity>
       )}
 
-      <SwitchSelector
-        disabled={isUserAnonymous}
-        options={[
-          { label: "User", value: "user", customIcon: "", disabled: isUserAnonymous || !Object.values(userRatings).some(value => value) },
-          { label: "Global", value: "global", customIcon: "" }
-        ]}
-        initial={ratingType === 'user' ? 0 : 1}
-        value={ratingType === 'user' ? 0 : 1}
-        onPress={(value) => setRatingType(value)}
-      />
+      <View style={styles.switch}>
+        <SwitchSelector
+          disabled={isUserAnonymous}
+          options={[
+            { label: "User", value: "user", customIcon: "", disabled: isUserAnonymous || !Object.values(userRatings).some(value => value) },
+            { label: "Global", value: "global", customIcon: "" }
+          ]}
+          initial={ratingType === 'user' ? 0 : 1}
+          value={ratingType === 'user' ? 0 : 1}
+          onPress={(value) => setRatingType(value)}
+        />
+      </View>
 
-      <Rating
-        readonly={!allowRating || ratingType == 'global'}
-        type="star"
-        imageSize={40}
-        ratingCount={5}
-        minValue={0}
-        startingValue={ratingType==='user' ? userRatings.aromaRating : aromaRating}
-        jumpValue={0.5}
-        fractions={2}
-        onFinishRating={(rating) => updateRating('aromaRating', rating)}
-        style={{ paddingVertical: 10 }}
-      />
-      <Rating
-        readonly={!allowRating || ratingType == 'global'}
-        type="star"
-        imageSize={40}
-        ratingCount={5}
-        minValue={0}
-        startingValue={ratingType==='user' ? userRatings.tasteRating : tasteRating}
-        jumpValue={0.5}
-        fractions={2}
-        onFinishRating={(rating) => updateRating('tasteRating', rating)}
-        style={{ paddingVertical: 10 }}
-      />
-      <Rating
-        readonly={!allowRating || ratingType == 'global'}
-        type="star"
-        imageSize={40}
-        ratingCount={5}
-        minValue={0}
-        startingValue={ratingType==='user' ? userRatings.afterTasteRating : afterTasteRating}
-        jumpValue={0.5}
-        fractions={2}
-        onFinishRating={(rating) => updateRating('afterTasteRating', rating)}
-        style={{ paddingVertical: 10 }}
-      />
+      <View style={styles.row}>
+        <Text style={[styles.detail]}>
+          Aroma: {ratingType==='user' ? userRatings.aromaRating : aromaRating}
+        </Text>
+        <Rating
+          readonly={!allowRating || ratingType == 'global'}
+          type="star"
+          imageSize={35}
+          ratingCount={5}
+          minValue={0}
+          startingValue={ratingType==='user' ? userRatings.aromaRating : aromaRating}
+          jumpValue={0.5}
+          fractions={2}
+          onFinishRating={(rating) => updateRating('aromaRating', rating)}
+          style={{ paddingVertical: 10 }}
+        />
+      </View>
+      <View style={styles.row}>
+        <Text style={styles.detail}>
+          Taste: {ratingType==='user' ? userRatings.tasteRating : tasteRating}
+        </Text>
+        <Rating
+          readonly={!allowRating || ratingType == 'global'}
+          type="star"
+          imageSize={35}
+          ratingCount={5}
+          minValue={0}
+          startingValue={ratingType==='user' ? userRatings.tasteRating : tasteRating}
+          jumpValue={0.5}
+          fractions={2}
+          onFinishRating={(rating) => updateRating('tasteRating', rating)}
+          style={{ paddingVertical: 10 }}
+        />
+      </View>
+      <View style={styles.row}>
+        <Text style={styles.detail}>
+          Aftertaste: {ratingType==='user' ? userRatings.afterTasteRating : afterTasteRating}
+        </Text>
+        <Rating
+          readonly={!allowRating || ratingType == 'global'}
+          type="star"
+          imageSize={35}
+          ratingCount={5}
+          minValue={0}
+          startingValue={ratingType==='user' ? userRatings.afterTasteRating : afterTasteRating}
+          jumpValue={0.5}
+          fractions={2}
+          onFinishRating={(rating) => updateRating('afterTasteRating', rating)}
+          style={{ paddingVertical: 10 }}
+        />
+      </View>
 
     </ScrollView>
     </>
@@ -269,6 +289,7 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 16,
+    paddingBottom: 20,
     backgroundColor: '#fff',
   },
   title: {
@@ -306,9 +327,14 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginBottom: 8,
   },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
   detail: {
     fontSize: 16,
-    marginBottom: 4,
+    flex: 1,
   },
   error: {
     fontSize: 20,
@@ -332,6 +358,9 @@ const styles = StyleSheet.create({
   flagImage: {
     width: 30,
     height: 30,
+  },
+  switch: {
+    marginTop: 20
   },
   button: {
     backgroundColor: '#007bff',
