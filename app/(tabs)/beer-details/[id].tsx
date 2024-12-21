@@ -184,7 +184,7 @@ export default function BeerDetails() {
       <Text style={styles.alcohol}>ABV: {abv}%</Text>
       <Text style={styles.tags}>Tags: {tags?.join(', ')}</Text>
       <Text style={[styles.rating]}>
-        Overall Rating: {ratingType==='user' ? userRatings.overallRating : overallRating}
+        Overall Rating: {ratingType==='user' ? parseFloat(userRatings.overallRating.toFixed(2)) : parseFloat(overallRating.toFixed(2))}
       </Text>
       <Rating
         readonly
@@ -199,7 +199,7 @@ export default function BeerDetails() {
       />
       { Object.values(userRatings).some(value => value) && (
         <Text style={[styles.detail]}>
-          Global average: {overallRating}
+          Global average: {parseFloat(overallRating.toFixed(2))}
         </Text>
       )}
 
