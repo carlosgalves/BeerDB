@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image, Button, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image, Button, TouchableOpacity, ToastAndroid } from 'react-native';
 import { useLocalSearchParams, Stack, useNavigation } from 'expo-router';
 import { FIRESTORE, FIREBASE_AUTH } from '../../../firebaseConfig';
 import { doc, getDoc, updateDoc, collection, setDoc } from 'firebase/firestore';
@@ -26,6 +26,10 @@ export default function BeerDetails() {
   })
   const [allowRating, setAllowRating] = useState(false)
   const [ratingType, setRatingType] = useState('global')
+
+  const showToast = (msg) => {
+    ToastAndroid.show(msg, ToastAndroid.SHORT, ToastAndroid.BOTTOM);
+  };
 
 
   useEffect(() => {
@@ -58,6 +62,7 @@ export default function BeerDetails() {
         }
       } catch (error) {
         console.error("Error fetching beer:", error);
+        showToast('Error fetching beer')
       } finally {
         setLoading(false);
       }
@@ -110,10 +115,11 @@ export default function BeerDetails() {
 
           updatedRatings.overallRating = overallRating;
 
-          Alert.alert('Success', 'Your rating has been updated!');
+          showToast('Your rating has been updated')
+
         } catch (error) {
           console.error('Error updating rating:', error);
-          Alert.alert('Error', 'There was an issue updating your rating. Please try again later.');
+          showToast('There was an issue updating your rating.')
         }
       }
       return updatedRatings;
