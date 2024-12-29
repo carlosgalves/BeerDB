@@ -9,7 +9,7 @@ import {
 import { Link, useRouter } from 'expo-router';
 import BeerCard from '../../components/BeerCard';
 import { FIRESTORE, FIREBASE_AUTH } from '../../firebaseConfig';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, FirebaseAuthTypes } from 'firebase/auth';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -19,6 +19,7 @@ export default function HomeScreen() {
   const [initializing, setInitializing] = useState(true);
   const [user, setUser] = useState<FirebaseAuthTypes.User | null>();
   const [beers, setBeers] = useState([]);
+  const [userRatings, setUserRatings] = useState<{ [key: string]: number }>({});
   const router = useRouter();
 
   useEffect(() => {
@@ -43,6 +44,18 @@ export default function HomeScreen() {
       const querySnapshot = await getDocs(collection(FIRESTORE, 'beers'));
       const beerData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setBeers(beerData);
+
+      if (user) {
+        const ratings: { [key: string]: number } = {};
+        for (const beer of beerData) {
+          const ratingRef = doc(FIRESTORE, 'beers', beer.id, 'ratings', user.uid);
+          const ratingDoc = await getDoc(ratingRef);
+          if (ratingDoc.exists()) {
+            ratings[beer.id] = ratingDoc.data()?.overallRating || 0;
+          }
+        }
+        setUserRatings(ratings);
+      }
     } catch (error) {
       console.error('Error fetching beers:', error);
     } finally {
@@ -74,7 +87,10 @@ export default function HomeScreen() {
             key={beer.id}
           >
             <Pressable>
-              <BeerCard {...beer} />
+              <BeerCard 
+                {...beer}
+                overallRating={userRatings[beer.id] || 0}
+              />
             </Pressable>
           </Link>
         ))}
