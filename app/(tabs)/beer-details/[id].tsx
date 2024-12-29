@@ -19,10 +19,10 @@ export default function BeerDetails() {
   const [loading, setLoading] = useState(true)
   const [beer, setBeer] = useState()
   const [userRatings, setUserRatings] = useState({
-    overallRating: null,
-    tasteRating: null,
-    aromaRating: null,
-    afterTasteRating: null,
+    overallRating: 0,
+    tasteRating: 0,
+    aromaRating: 0,
+    afterTasteRating: 0,
   })
   const [allowRating, setAllowRating] = useState(false)
   const [ratingType, setRatingType] = useState('global')
@@ -39,18 +39,18 @@ export default function BeerDetails() {
     setAllowRating(false);
     setRatingType('global');
     setUserRatings({
-      overallRating: null,
-      tasteRating: null,
-      aromaRating: null,
-      afterTasteRating: null,
+      overallRating: 0,
+      tasteRating: 0,
+      aromaRating: 0,
+      afterTasteRating: 0,
     });
 
     async function fetchBeerData() {
       setUserRatings({
-        overallRating: null,
-        tasteRating: null,
-        aromaRating: null,
-        afterTasteRating: null,
+        overallRating: 0,
+        tasteRating: 0,
+        aromaRating: 0,
+        afterTasteRating: 0,
       });
       try {
         const beerRef = doc(FIRESTORE, 'beers', id);
@@ -64,10 +64,16 @@ export default function BeerDetails() {
           const userRatingDoc = await getDoc(userRatingRef);
 
           if (userRatingDoc.exists()) {
-            const { tasteRating, aromaRating, afterTasteRating, overallRating } = userRatingDoc.data();
+            const { tasteRating = 0, aromaRating = 0, afterTasteRating = 0, overallRating = 0 } = userRatingDoc.data();
             setUserRatings({ tasteRating, aromaRating, afterTasteRating, overallRating });
           }
         } else {
+          setUserRatings({
+            overallRating: 0,
+            tasteRating: 0,
+            aromaRating: 0,
+            afterTasteRating: 0,
+          });
           console.log('No such beer!');
         }
       } catch (error) {
@@ -83,7 +89,7 @@ export default function BeerDetails() {
   useEffect(() => {
     if (loading) return;
 
-    if (Object.values(userRatings).every(value => value === null || 0)) {
+    if (Object.values(userRatings).every(value => value === 0)) {
       setAllowRating(false)
       setRatingType('global')
     } else {
@@ -249,10 +255,10 @@ export default function BeerDetails() {
               // Reset de classificação individual => faz com que o botão de classificar reapareça
               setRatingType("global");
               setUserRatings({
-                overallRating: null,
-                tasteRating: null,
-                aromaRating: null,
-                afterTasteRating: null,
+                overallRating: 0,
+                tasteRating: 0,
+                aromaRating: 0,
+                afterTasteRating: 0,
               });
               setAllowRating(false);
             } else if (value === "user" && allowRating) {
