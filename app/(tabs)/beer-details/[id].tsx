@@ -219,12 +219,23 @@ export default function BeerDetails() {
         </Text>
       )}
 
-      { (!allowRating) && (
+      { (Object.values(userRatings).some(value => value === 0)) && (
         <TouchableOpacity
           onPress={ () => {
-            setAllowRating(true)
-            setRatingType('user')}
-          }
+            if (!allowRating) {
+              setAllowRating(true)
+              setRatingType('user')
+            } else {
+              setAllowRating(false)
+              setRatingType('global')
+              setUserRatings({
+                overallRating: 0,
+                tasteRating: 0,
+                aromaRating: 0,
+                afterTasteRating: 0,
+              });
+            }
+          }}
           style={[
               styles.button,
               isUserAnonymous && styles.disabledButton,
@@ -232,7 +243,7 @@ export default function BeerDetails() {
           disabled={isUserAnonymous}
         >
           <Text style={isUserAnonymous ? styles.disabledText : styles.buttonText}>
-            Rate
+            {ratingType === 'user' ? 'Cancel' : 'Rate'}
           </Text>
         </TouchableOpacity>
       )}
