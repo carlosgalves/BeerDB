@@ -35,6 +35,16 @@ export default function BeerDetails() {
   useEffect(() => {
     setLoading(true)
 
+    // Reset de classificações não submetidas
+    setAllowRating(false);
+    setRatingType('global');
+    setUserRatings({
+      overallRating: null,
+      tasteRating: null,
+      aromaRating: null,
+      afterTasteRating: null,
+    });
+
     async function fetchBeerData() {
       setUserRatings({
         overallRating: null,
@@ -184,8 +194,11 @@ export default function BeerDetails() {
       <Text style={styles.alcohol}>ABV: {abv}%</Text>
       <Text style={styles.tags}>Tags: {tags?.join(', ')}</Text>
       <Text style={[styles.rating]}>
-        Overall Rating: {ratingType==='user' ? parseFloat(userRatings.overallRating.toFixed(2)) : parseFloat(overallRating.toFixed(2))}
+        Overall Rating: {ratingType === 'user' 
+          ? parseFloat((userRatings.overallRating || 0).toFixed(2)) 
+          : parseFloat((overallRating || 0).toFixed(2))}
       </Text>
+
       <Rating
         readonly
         type="star"
