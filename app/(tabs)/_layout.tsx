@@ -39,7 +39,8 @@ export default function TabLayout() {
         options={{
           headerShown: true,
           title: '',
-          href: null
+          href: null,
+          tabBarStyle: { display: 'none' },
         }}
       />
       <Tabs.Screen
@@ -47,10 +48,10 @@ export default function TabLayout() {
         options={{
           title: '',
           headerShown: false,
-          href: null
+          href: null,
+          tabBarStyle: { display: 'none' },
         }}
       />
-
     </Tabs>
   );
 }

@@ -11,8 +11,6 @@ export default function AuthScreen() {
   const [isSigningUp, setIsSigningUp] = useState(false);
   const router = useRouter();
 
-  console.log(FIREBASE_AUTH)
-
   const handleAnonymousSignIn = () => {
     Alert.alert(
       'Tens a certeza?',
