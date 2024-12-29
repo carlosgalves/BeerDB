@@ -32,16 +32,6 @@ export default function BeerDetails() {
   useEffect(() => {
     setLoading(true)
 
-    // Reset de classificações não submetidas
-    setAllowRating(false);
-    setRatingType('global');
-    setUserRatings({
-      overallRating: 0,
-      tasteRating: 0,
-      aromaRating: 0,
-      afterTasteRating: 0,
-    });
-
     async function fetchBeerData() {
       setUserRatings({
         overallRating: 0,
@@ -106,6 +96,22 @@ export default function BeerDetails() {
     } catch (error) {
       console.error('Error fetching rating:', error);
     }
+  }
+
+  const startRating = () => {
+    setAllowRating(true)
+    setRatingType('user')
+  }
+  
+  const cancelRating = () => {
+    setAllowRating(false)
+    setRatingType('global')
+    setUserRatings({
+      overallRating: 0,
+      tasteRating: 0,
+      aromaRating: 0,
+      afterTasteRating: 0,
+    })
   }
 
   const updateRating = async (category, rating) => {
@@ -213,11 +219,10 @@ export default function BeerDetails() {
         fractions={2}
         style={{ paddingVertical: 10 }}
       />
-      { Object.values(userRatings).some(value => value) && (
-        <Text style={[styles.detail]}>
-          Global average: {parseFloat(overallRating.toFixed(2))}
-        </Text>
-      )}
+
+      <Text style={[styles.detail]}>
+        Global average: {overallRating ? parseFloat(overallRating.toFixed(2)) : 'N/A'}
+      </Text>
 
       { (Object.values(userRatings).some(value => value === 0)) && (
         <TouchableOpacity
@@ -239,6 +244,7 @@ export default function BeerDetails() {
           style={[
               styles.button,
               isUserAnonymous && styles.disabledButton,
+              ratingType === 'user' && styles.cancelButton
           ]}
           disabled={isUserAnonymous}
         >
@@ -257,7 +263,6 @@ export default function BeerDetails() {
           ]}
           initial={ratingType === 'user' ? 0 : 1}
           value={ratingType === 'user' ? 0 : 1}
-          onPress={(value) => setRatingType(value)}
           onPress={(value) => {
             if (value === "global") {
               // Reset de classificação individual => faz com que o botão de classificar reapareça
@@ -415,6 +420,9 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
     alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: 'red',
   },
   buttonText: {
     color: '#fff',
