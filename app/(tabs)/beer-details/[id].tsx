@@ -244,6 +244,21 @@ export default function BeerDetails() {
           initial={ratingType === 'user' ? 0 : 1}
           value={ratingType === 'user' ? 0 : 1}
           onPress={(value) => setRatingType(value)}
+          onPress={(value) => {
+            if (value === "global") {
+              // Reset de classificação individual => faz com que o botão de classificar reapareça
+              setRatingType("global");
+              setUserRatings({
+                overallRating: null,
+                tasteRating: null,
+                aromaRating: null,
+                afterTasteRating: null,
+              });
+              setAllowRating(false);
+            } else if (value === "user" && allowRating) {
+              setRatingType("user");
+            }
+          }}
         />
       </View>
 
