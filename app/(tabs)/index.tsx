@@ -47,21 +47,23 @@ export default function HomeScreen() {
 
       if (user) {
         const ratings: { [key: string]: number } = {};
-        for (const beer of beerData) {
-          const ratingRef = doc(FIRESTORE, 'beers', beer.id, 'ratings', user.uid);
-          const ratingDoc = await getDoc(ratingRef);
-          if (ratingDoc.exists()) {
-            ratings[beer.id] = ratingDoc.data()?.overallRating || 0;
-          }
-        }
+        await Promise.all(
+          beerData.map(async (beer) => {
+            const ratingRef = doc(FIRESTORE, 'beers', beer.id, 'ratings', user.uid);
+            const ratingDoc = await getDoc(ratingRef);
+            if (ratingDoc.exists()) {
+              ratings[beer.id] = ratingDoc.data()?.overallRating || 0;
+            }
+          })
+        );
         setUserRatings(ratings);
       }
     } catch (error) {
-      console.error('Error fetching beers:', error);
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useFocusEffect(
     React.useCallback(() => {

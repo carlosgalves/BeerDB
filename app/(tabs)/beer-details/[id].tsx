@@ -265,15 +265,17 @@ export default function BeerDetails() {
           value={ratingType === 'user' ? 0 : 1}
           onPress={(value) => {
             if (value === "global") {
-              // Reset de classificação individual => faz com que o botão de classificar reapareça
               setRatingType("global");
-              setUserRatings({
-                overallRating: 0,
-                tasteRating: 0,
-                aromaRating: 0,
-                afterTasteRating: 0,
-              });
-              setAllowRating(false);
+
+              if (!Object.values(userRatings).every(rating => rating > 0)) {
+                setUserRatings({
+                  overallRating: overallRating || 0,
+                  tasteRating: tasteRating || 0,
+                  aromaRating: aromaRating || 0,
+                  afterTasteRating: afterTasteRating || 0,
+                });
+              }
+
             } else if (value === "user" && allowRating) {
               setRatingType("user");
             }
