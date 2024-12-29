@@ -47,6 +47,12 @@
         "projectId": "efb505ce-2fc7-4e9a-9234-802712fc1204"
       }
     },
-    "owner": "carlosgalves"
+    "owner": "carlosgalves",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/efb505ce-2fc7-4e9a-9234-802712fc1204"
+    }
   }
 }
