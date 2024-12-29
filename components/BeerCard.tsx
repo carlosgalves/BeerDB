@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, View, Image } from 'react-native';
 import { Card, Title, Text } from 'react-native-paper';
 import { flagImages } from '../data/mappers/imageMapper'
+import { Rating } from 'react-native-ratings';
 
 
 interface BeerCardProps {
@@ -11,10 +12,12 @@ interface BeerCardProps {
   country: string;
   countryIso: string;
   image: string;
+  overallRating: number;
 }
 
 
-const BeerCard: React.FC<BeerCardPsrops> = ({ name, brewery, country, countryIso, image }) => {
+const BeerCard: React.FC<BeerCardProps> = ({ name, brewery, country, countryIso, image, overallRating }) => {
+
   return (
     <Card style={styles.card}>
       <Card.Title
@@ -41,6 +44,18 @@ const BeerCard: React.FC<BeerCardPsrops> = ({ name, brewery, country, countryIso
         />
       </View>
       <Card.Content>
+        <View style={styles.ratingContainer}>
+          <Rating
+            readonly
+            type="star"
+            imageSize={30}
+            ratingCount={5}
+            fractions={2}
+            startingValue={overallRating}
+            tintColor={styles.card.backgroundColor}
+          />
+          <Text style={styles.ratingText}>({overallRating ? overallRating.toFixed(1) : 'N/A'})</Text>
+        </View>
       </Card.Content>
     </Card>
   );
@@ -52,6 +67,7 @@ const styles = StyleSheet.create({
     margin: 16,
     flex: 1,
     height: '100%',
+    backgroundColor: '#ededed'
   },
   titleStyle: {
     textAlign: 'center',
@@ -77,7 +93,15 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
-  }
+  },
+  ratingContainer: {
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  ratingText: {
+    fontSize: 16,
+    marginBottom: 5,
+  },
 });
 
 export default BeerCard;
