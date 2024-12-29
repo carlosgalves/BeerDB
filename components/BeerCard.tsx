@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Image } from 'react-native';
 import { Card, Title, Text } from 'react-native-paper';
-import { flagImages, beerImages} from '../data/mappers/imageMapper'
+import { flagImages } from '../data/mappers/imageMapper'
 import { Rating } from 'react-native-ratings';
 
 
@@ -10,12 +10,14 @@ interface BeerCardProps {
   id: string;
   brewery: string;
   country: string;
+  countryIso: string;
   image: string;
   overallRating: number;
 }
 
 
-const BeerCard: React.FC<BeerCardProps> = ({ name, brewery, country, image, overallRating }) => {
+const BeerCard: React.FC<BeerCardProps> = ({ name, brewery, country, countryIso, image, overallRating }) => {
+
   return (
     <Card style={styles.card}>
       <Card.Title
@@ -26,7 +28,7 @@ const BeerCard: React.FC<BeerCardProps> = ({ name, brewery, country, image, over
       />
       <View style={styles.flagContainer}>
         <Image
-          source={flagImages[country]}
+          source={flagImages[countryIso] || flagImages[""]}
           style={styles.flagImage}
         />
       </View>
