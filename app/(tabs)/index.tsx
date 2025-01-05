@@ -6,7 +6,8 @@ import {
   FlatList,
   ActivityIndicator,
   Pressable,
-  TextInput
+  TextInput,
+  Text
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import BeerCard from '../../components/BeerCard';
@@ -14,6 +15,7 @@ import { FIRESTORE, FIREBASE_AUTH } from '../../firebaseConfig';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, FirebaseAuthTypes } from 'firebase/auth';
 import { useFocusEffect } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 export default function HomeScreen() {
 
@@ -87,18 +89,29 @@ export default function HomeScreen() {
     }
   }, [searchQuery, beers]);
 
+  const clearSearch = () => {
+    setSearchQuery('');
+  };
+
   if (loading || initializing) {
     return <ActivityIndicator size="large" color="#0000ff" />;
   }
 
   return (
     <View style={styles.container}>
-      <TextInput
-        style={styles.searchBar}
-        placeholder="Search"
-        value={searchQuery}
-        onChangeText={(text) => setSearchQuery(text)}
-      />
+      <View style={styles.searchBarContainer}>
+        <TextInput
+          style={styles.searchBar}
+          placeholder="Search"
+          value={searchQuery}
+          onChangeText={(text) => setSearchQuery(text)}
+        />
+        {searchQuery ? (
+            <Pressable onPress={clearSearch}>
+              <Icon name="close-circle" size={24} style={styles.clearButton} />
+            </Pressable>
+          ) : null}
+      </View>
       <FlatList
         data={beerList}
         keyExtractor={(item) => item.id}
@@ -130,12 +143,23 @@ const styles = StyleSheet.create({
   scrollContainer: {
     padding: 16,
   },
+  searchBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    margin: 16,
+  },
   searchBar: {
     height: 40,
+    flex: 1,
     borderColor: '#ccc',
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 10,
-    margin: 16,
+  },
+  clearButton: {
+    marginLeft: 10,
+    color: '#ccc',
+    fontSize: 16,
+    fontWeight: 'bold',
   }
 });
