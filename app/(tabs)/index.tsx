@@ -3,6 +3,7 @@ import {
   StyleSheet,
   View,
   ScrollView,
+  FlatList,
   ActivityIndicator,
   Pressable,
   TextInput
@@ -98,26 +99,25 @@ export default function HomeScreen() {
         value={searchQuery}
         onChangeText={(text) => setSearchQuery(text)}
       />
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {beerList.map((beer) => (
-          <Link push href={{
-            pathname: '/beer-details/[id]',
-            params: {
-              id: beer.id,
-            },
+      <FlatList
+        data={beerList}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item: beer }) => (
+          <Link
+            push
+            href={{
+              pathname: '/beer-details/[id]',
+              params: { id: beer.id },
             }}
             asChild
-            key={beer.id}
           >
             <Pressable>
-              <BeerCard 
-                {...beer}
-                overallRating={userRatings[beer.id] || 0}
-              />
+              <BeerCard {...beer} overallRating={userRatings[beer.id] || 0} />
             </Pressable>
           </Link>
-        ))}
-      </ScrollView>
+        )}
+        contentContainerStyle={styles.scrollContainer}
+      />
     </View>
   );
 }
