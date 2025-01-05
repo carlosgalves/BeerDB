@@ -4,7 +4,8 @@ import {
   View,
   ScrollView,
   ActivityIndicator,
-  Pressable
+  Pressable,
+  TextInput
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import BeerCard from '../../components/BeerCard';
@@ -19,6 +20,8 @@ export default function HomeScreen() {
   const [initializing, setInitializing] = useState(true);
   const [user, setUser] = useState<FirebaseAuthTypes.User | null>();
   const [beers, setBeers] = useState([]);
+  const [beerList, setBeerList] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [userRatings, setUserRatings] = useState<{ [key: string]: number }>({});
   const router = useRouter();
 
@@ -42,8 +45,8 @@ export default function HomeScreen() {
     setLoading(true);
     try {
       const querySnapshot = await getDocs(collection(FIRESTORE, 'beers'));
-      const beerData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setBeers(beerData);
+      const beerData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+      setBeers(beerData)
 
       if (user) {
         const ratings: { [key: string]: number } = {};
@@ -68,8 +71,20 @@ export default function HomeScreen() {
   useFocusEffect(
     React.useCallback(() => {
       fetchBeers();
+      setBeerList(beers);
     }, [fetchBeers])
   );
+
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setBeerList(beers)
+    } else {
+      const filteredBeers = beers.filter((beer) =>
+        beer.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setBeerList(filteredBeers)
+    }
+  }, [searchQuery, beers]);
 
   if (loading || initializing) {
     return <ActivityIndicator size="large" color="#0000ff" />;
@@ -77,8 +92,14 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
+      <TextInput
+        style={styles.searchBar}
+        placeholder="Search"
+        value={searchQuery}
+        onChangeText={(text) => setSearchQuery(text)}
+      />
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {beers.map((beer) => (
+        {beerList.map((beer) => (
           <Link push href={{
             pathname: '/beer-details/[id]',
             params: {
@@ -109,4 +130,12 @@ const styles = StyleSheet.create({
   scrollContainer: {
     padding: 16,
   },
+  searchBar: {
+    height: 40,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    margin: 16,
+  }
 });
