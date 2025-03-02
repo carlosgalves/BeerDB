@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { PureComponent } from 'react';
 import { StyleSheet, View, Image } from 'react-native';
 import { Card, Title, Text } from 'react-native-paper';
 import { flagImages } from '../data/mappers/imageMapper'
@@ -16,49 +16,52 @@ interface BeerCardProps {
 }
 
 
-const BeerCard: React.FC<BeerCardProps> = ({ name, brewery, country, countryIso, image, overallRating }) => {
+class BeerCard extends PureComponent<BeerCardProps> {
+  render() {
+    const {name, brewery, country, countryIso, image, overallRating } = this.props;
 
-  return (
-    <Card style={styles.card}>
-      <Card.Title
-        title={name}
-        subtitle={brewery}
-        titleStyle={styles.titleStyle}
-        subtitleStyle={styles.subtitleStyle}
-      />
-      <View style={styles.flagContainer}>
-        <Image
-          source={flagImages[countryIso] || flagImages[""]}
-          style={styles.flagImage}
+    return (
+      <Card style={styles.card}>
+        <Card.Title
+          title={name}
+          subtitle={brewery}
+          titleStyle={styles.titleStyle}
+          subtitleStyle={styles.subtitleStyle}
         />
-      </View>
-      <View style={styles.coverContainer}>
-        <Image
-          source={
-            image
-              ? { uri: `data:image/png;base64,${image}` }
-              : require('../assets/images/beer/unknown.png')
-          }
-          style={styles.image}
-          resizeMode="contain"
-        />
-      </View>
-      <Card.Content>
-        <View style={styles.ratingContainer}>
-          <Rating
-            readonly
-            type="star"
-            imageSize={30}
-            ratingCount={5}
-            fractions={2}
-            startingValue={overallRating}
-            tintColor={styles.card.backgroundColor}
+        <View style={styles.flagContainer}>
+          <Image
+            source={flagImages[countryIso] || flagImages[""]}
+            style={styles.flagImage}
           />
-          <Text style={styles.ratingText}>({overallRating ? overallRating.toFixed(1) : 'N/A'})</Text>
         </View>
-      </Card.Content>
-    </Card>
-  );
+        <View style={styles.coverContainer}>
+          <Image
+            source={
+              image
+                ? { uri: `data:image/png;base64,${image}` }
+                : require('../assets/images/beer/unknown.png')
+            }
+            style={styles.image}
+            resizeMode="contain"
+          />
+        </View>
+        <Card.Content>
+          <View style={styles.ratingContainer}>
+            <Rating
+              readonly
+              type="star"
+              imageSize={30}
+              ratingCount={5}
+              fractions={2}
+              startingValue={overallRating}
+              tintColor={styles.card.backgroundColor}
+            />
+            <Text style={styles.ratingText}>({overallRating ? overallRating.toFixed(1) : 'N/A'})</Text>
+          </View>
+        </Card.Content>
+      </Card>
+    );
+  }
 };
 
 

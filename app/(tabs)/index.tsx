@@ -1,17 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   StyleSheet,
   View,
   ScrollView,
+  FlatList,
   ActivityIndicator,
-  Pressable
+  Pressable,
+  TextInput,
+  Text
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import BeerCard from '../../components/BeerCard';
 import { FIRESTORE, FIREBASE_AUTH } from '../../firebaseConfig';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, FirebaseAuthTypes } from 'firebase/auth';
-import { useFocusEffect } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 export default function HomeScreen() {
 
@@ -19,6 +22,8 @@ export default function HomeScreen() {
   const [initializing, setInitializing] = useState(true);
   const [user, setUser] = useState<FirebaseAuthTypes.User | null>();
   const [beers, setBeers] = useState([]);
+  const [beerList, setBeerList] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [userRatings, setUserRatings] = useState<{ [key: string]: number }>({});
   const router = useRouter();
 
@@ -42,8 +47,8 @@ export default function HomeScreen() {
     setLoading(true);
     try {
       const querySnapshot = await getDocs(collection(FIRESTORE, 'beers'));
-      const beerData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setBeers(beerData);
+      const beerData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+      setBeers(beerData)
 
       if (user) {
         const ratings: { [key: string]: number } = {};
@@ -65,11 +70,26 @@ export default function HomeScreen() {
     }
   }, [user]);
 
-  useFocusEffect(
-    React.useCallback(() => {
-      fetchBeers();
-    }, [fetchBeers])
-  );
+  const memoizedBeers = useMemo(() => beers, [beers])
+
+  useEffect(() => {
+    fetchBeers();
+  }, [fetchBeers]);
+
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setBeerList(memoizedBeers)
+    } else {
+      const filteredBeers = memoizedBeers.filter((beer) =>
+        beer.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setBeerList(filteredBeers);
+    }
+  }, [searchQuery, memoizedBeers]);
+
+  const clearSearch = () => {
+    setSearchQuery('');
+  };
 
   if (loading || initializing) {
     return <ActivityIndicator size="large" color="#0000ff" />;
@@ -77,26 +97,38 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {beers.map((beer) => (
-          <Link push href={{
-            pathname: '/beer-details/[id]',
-            params: {
-              id: beer.id,
-            },
+      <View style={styles.searchBarContainer}>
+        <TextInput
+          style={styles.searchBar}
+          placeholder="Search"
+          value={searchQuery}
+          onChangeText={(text) => setSearchQuery(text)}
+        />
+        {searchQuery ? (
+            <Pressable onPress={clearSearch}>
+              <Icon name="close-circle" size={24} style={styles.clearButton} />
+            </Pressable>
+          ) : null}
+      </View>
+      <FlatList
+        data={beerList}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item: beer }) => (
+          <Link
+            push
+            href={{
+              pathname: '/beer-details/[id]',
+              params: { id: beer.id },
             }}
             asChild
-            key={beer.id}
           >
             <Pressable>
-              <BeerCard 
-                {...beer}
-                overallRating={userRatings[beer.id] || 0}
-              />
+              <BeerCard {...beer} overallRating={userRatings[beer.id] || 0} />
             </Pressable>
           </Link>
-        ))}
-      </ScrollView>
+        )}
+        contentContainerStyle={styles.scrollContainer}
+      />
     </View>
   );
 }
@@ -109,4 +141,23 @@ const styles = StyleSheet.create({
   scrollContainer: {
     padding: 16,
   },
+  searchBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    margin: 16,
+  },
+  searchBar: {
+    height: 40,
+    flex: 1,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+  },
+  clearButton: {
+    marginLeft: 10,
+    color: '#ccc',
+    fontSize: 16,
+    fontWeight: 'bold',
+  }
 });
