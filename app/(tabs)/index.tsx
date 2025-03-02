@@ -15,6 +15,7 @@ import { FIRESTORE, FIREBASE_AUTH } from '../../firebaseConfig';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, FirebaseAuthTypes } from 'firebase/auth';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Picker } from '@react-native-picker/picker';
 
 export default function HomeScreen() {
 
@@ -25,6 +26,7 @@ export default function HomeScreen() {
   const [beerList, setBeerList] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [userRatings, setUserRatings] = useState<{ [key: string]: number }>({});
+  const [sortOption, setSortOption] = useState<'Name A-Z' | 'Name Z-A' | 'Country A-Z' | 'Country Z-A' | 'Rating Ascending' | 'Rating Descending'>('Rating Descending');
   const router = useRouter();
 
   useEffect(() => {
@@ -77,6 +79,39 @@ export default function HomeScreen() {
   }, [fetchBeers]);
 
   useEffect(() => {
+    let filteredBeers = memoizedBeers;
+
+    if (searchQuery.trim() !== '') {
+      filteredBeers = filteredBeers.filter((beer) =>
+        beer.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    switch (sortOption) {
+      case 'Name A-Z':
+        filteredBeers = [...filteredBeers].sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case 'Name Z-A':
+        filteredBeers = [...filteredBeers].sort((a, b) => b.name.localeCompare(a.name));
+        break;
+      case 'Country A-Z':
+        filteredBeers = [...filteredBeers].sort((a, b) => (a.country || '').localeCompare(b.country || ''));
+        break;
+      case 'Country Z-A':
+        filteredBeers = [...filteredBeers].sort((a, b) => (b.country || '').localeCompare(a.country || ''));
+        break;
+      case 'Rating Ascending':
+        filteredBeers = [...filteredBeers].sort((a, b) => (userRatings[a.id] || 0) - (userRatings[b.id] || 0));
+        break;
+      case 'Rating Descending':
+        filteredBeers = [...filteredBeers].sort((a, b) => (userRatings[b.id] || 0) - (userRatings[a.id] || 0));
+        break;
+    }
+
+    setBeerList(filteredBeers);
+  }, [searchQuery, memoizedBeers, sortOption, userRatings]);
+
+/*   useEffect(() => {
     if (searchQuery.trim() === '') {
       setBeerList(memoizedBeers)
     } else {
@@ -85,7 +120,7 @@ export default function HomeScreen() {
       );
       setBeerList(filteredBeers);
     }
-  }, [searchQuery, memoizedBeers]);
+  }, [searchQuery, memoizedBeers]); */
 
   const clearSearch = () => {
     setSearchQuery('');
@@ -110,6 +145,22 @@ export default function HomeScreen() {
             </Pressable>
           ) : null}
       </View>
+
+      <View style={styles.pickerContainer}>
+        <Picker
+          selectedValue={sortOption}
+          onValueChange={(value) => setSortOption(value)}
+          style={styles.picker}
+        >
+          <Picker.Item label="Name A-Z" value="Name A-Z" />
+          <Picker.Item label="Name Z-A" value="Name Z-A" />
+          <Picker.Item label="Country A-Z" value="Country A-Z" />
+          <Picker.Item label="Country Z-A" value="Country Z-A" />
+          <Picker.Item label="Rating Ascending" value="Rating Ascending" />
+          <Picker.Item label="Rating Descending" value="Rating Descending" />
+        </Picker>
+      </View>
+
       <FlatList
         data={beerList}
         keyExtractor={(item) => item.id}
@@ -159,5 +210,35 @@ const styles = StyleSheet.create({
     color: '#ccc',
     fontSize: 16,
     fontWeight: 'bold',
-  }
+  },
+  sortContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  sortButton: {
+    padding: 10,
+    marginHorizontal: 5,
+    backgroundColor: '#ddd',
+    borderRadius: 5,
+  },
+  activeSort: {
+    backgroundColor: '#007bff',
+  },
+  pickerContainer: {
+    marginHorizontal: 16,
+    width: '40%',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    backgroundColor: '#fff',
+    overflow: 'hidden',
+    paddingHorizontal: 10,
+  },
+  picker: {
+    height: 50,
+    width: '100%',
+    color: '#333',
+  },
+
 });
