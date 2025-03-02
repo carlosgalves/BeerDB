@@ -52,6 +52,14 @@ export default function TabLayout() {
           tabBarStyle: { display: 'none' },
         }}
       />
+      <Tabs.Screen
+        name="user_settings"
+        options={{
+          title: '',
+          headerShown: false,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="user" color={color} />,
+        }}
+      />
     </Tabs>
   );
 }
