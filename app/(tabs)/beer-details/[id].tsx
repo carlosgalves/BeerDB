@@ -158,7 +158,7 @@ export default function BeerDetails() {
   }
 
   const {
-    name, brewery, country, type, description, abv, tags, image,
+    name, brewery, country, countryIso, type, description, abv, tags, image,
     overallRating, aromaRating, tasteRating, afterTasteRating
   } = beer;
 
@@ -193,7 +193,7 @@ export default function BeerDetails() {
       </View>
       <View style={styles.flagContainer}>
         <Image
-          source={flagImages[country]}
+          source={flagImages[countryIso] || flagImages[""]}
           style={styles.flagImage}
         />
       </View>
@@ -407,12 +407,12 @@ const styles = StyleSheet.create({
   },
   flagContainer: {
     position: 'absolute',
-    top: 80,
+    top: 50,
     right: 50,
   },
   flagImage: {
-    width: 30,
-    height: 30,
+    width: 50,
+    height: 50,
   },
   switch: {
     marginTop: 20
