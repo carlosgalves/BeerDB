@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   StyleSheet,
   View,
@@ -14,7 +14,6 @@ import BeerCard from '../../components/BeerCard';
 import { FIRESTORE, FIREBASE_AUTH } from '../../firebaseConfig';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, FirebaseAuthTypes } from 'firebase/auth';
-import { useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 export default function HomeScreen() {
@@ -71,23 +70,22 @@ export default function HomeScreen() {
     }
   }, [user]);
 
-  useFocusEffect(
-    React.useCallback(() => {
-      fetchBeers();
-      setBeerList(beers);
-    }, [fetchBeers])
-  );
+  const memoizedBeers = useMemo(() => beers, [beers])
+
+  useEffect(() => {
+    fetchBeers();
+  }, [fetchBeers]);
 
   useEffect(() => {
     if (searchQuery.trim() === '') {
-      setBeerList(beers)
+      setBeerList(memoizedBeers)
     } else {
-      const filteredBeers = beers.filter((beer) =>
+      const filteredBeers = memoizedBeers.filter((beer) =>
         beer.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
-      setBeerList(filteredBeers)
+      setBeerList(filteredBeers);
     }
-  }, [searchQuery, beers]);
+  }, [searchQuery, memoizedBeers]);
 
   const clearSearch = () => {
     setSearchQuery('');
