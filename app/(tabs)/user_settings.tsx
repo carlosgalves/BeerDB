@@ -13,12 +13,27 @@ import {
   Image,
 } from 'react-native';
 import { FIREBASE_AUTH } from '../../firebaseConfig';
+import { onAuthStateChanged } from "firebase/auth";
 import Constants from "expo-constants";
 import { IconSymbol } from '@/components/ui/IconSymbol';
 
 
 const UserProfileScreen = () => {
-  const user = FIREBASE_AUTH.currentUser;
+  const [user, setUser] = useState(FIREBASE_AUTH.currentUser);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(FIREBASE_AUTH, (updatedUser) => {
+      setUser(updatedUser);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  if (loading) {
+    return <ActivityIndicator size="large" color="#0000ff" />;
+  }
 
   const handleSignOut = async () => {
     try {
@@ -55,8 +70,16 @@ const UserProfileScreen = () => {
             </>
           )}
 
-          <Text style={styles.infoLabel}>Sign-in Provider:</Text>
-          <Text style={styles.infoText}>{user?.providerData[0]?.providerId}</Text>
+          {!user?.isAnonymous ? (
+            <>
+              <Text style={styles.infoLabel}>Sign-in Provider:</Text>
+              <Text style={styles.infoText}>{user?.providerData[0]?.providerId}</Text>
+            </>
+            ) : (
+            <>
+              <Text style={styles.infoLabel}> ⚠️ Guest User</Text>
+            </>
+          )}
 
           <Text style={styles.infoLabel}>Last Login:</Text>
           <Text style={styles.infoText}>{user?.metadata?.lastSignInTime}</Text>
