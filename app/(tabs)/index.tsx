@@ -7,7 +7,8 @@ import {
   ActivityIndicator,
   Pressable,
   TextInput,
-  Text
+  Text,
+  Button
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import BeerCard from '../../components/BeerCard';
@@ -16,6 +17,7 @@ import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, FirebaseAuthTypes } from 'firebase/auth';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Picker } from '@react-native-picker/picker';
+import FilterModal from '../../components/FilterModal';
 
 export default function HomeScreen() {
 
@@ -27,12 +29,11 @@ export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [userRatings, setUserRatings] = useState<{ [key: string]: number }>({});
   const [sortOption, setSortOption] = useState<'Name A-Z' | 'Name Z-A' | 'Country A-Z' | 'Country Z-A' | 'Rating Ascending' | 'Rating Descending'>('Rating Descending');
-  const [countries, setCountries] = useState<string[]>([]);
-  const [countryFilter, setCountryFilter] = useState<string | null>(null);
-  const [breweries, setBreweries] = useState<string[]>([]);
-  const [breweryFilter, setBreweryFilter] = useState<string | null>(null);
-  const [beerTypes, setBeerTypes] = useState<string[]>([]);
-  const [beerTypeFilter, setBeerTypeFilter] = useState<string | null>(null);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [countries, setCountries] = useState([]);
+  const [breweries, setBreweries] = useState([]);
+  const [beerTypes, setBeerTypes] = useState([]);
+  const [filters, setFilters] = useState([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -51,19 +52,35 @@ export default function HomeScreen() {
     };
   }, [initializing]);
 
-  useEffect(() => {
-    const fetchCountries = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(FIRESTORE, "Countries"));
-        const countryList = querySnapshot.docs.map((doc) => doc.data().name);
-        setCountries(countryList);
-      } catch (error) {
-        console.error("Error fetching countries:", error);
-      }
-    };
-
-    fetchCountries();
+   useEffect(() => {
+    fetchData('Countries', setCountries);
+    fetchData('Breweries', setBreweries);
+    fetchData('BeerTypes', setBeerTypes);
   }, []);
+
+  const fetchData = async (collectionName, setState) => {
+    try {
+      const querySnapshot = await getDocs(collection(FIRESTORE, collectionName));
+      const dataList = querySnapshot.docs.map((doc) => doc.data().name);
+      setState(dataList);
+    } catch (error) {
+      console.error(`Error fetching ${collectionName}:`, error);
+    }
+  };
+
+  const handleApplyFilters = (filterType, selectedValue) => {
+    const updatedFilters = [...filters];
+    const filterIndex = updatedFilters.findIndex((filter) => filter.type === filterType);
+
+    if (filterIndex > -1) {
+      updatedFilters[filterIndex] = { type: filterType, value: selectedValue };
+    } else {
+      updatedFilters.push({ type: filterType, value: selectedValue });
+    }
+
+    setFilters(updatedFilters);
+    setFilterModalVisible(false);
+  };
 
   const fetchBeers = React.useCallback(async () => {
     setLoading(true);
@@ -107,9 +124,11 @@ export default function HomeScreen() {
       );
     }
 
-    if (countryFilter) {
-      filteredBeers = filteredBeers.filter((beer) => beer.country === countryFilter);
-    }
+    filters.forEach(({ type, value }) => {
+      if (value) {
+        filteredBeers = filteredBeers.filter((beer) => beer[type]?.toLowerCase() === value.toLowerCase());
+      }
+    });
 
     switch (sortOption) {
       case 'Name A-Z':
@@ -135,18 +154,7 @@ export default function HomeScreen() {
     }
 
     setBeerList(filteredBeers);
-  }, [searchQuery, memoizedBeers, sortOption, countryFilter, userRatings]);
-
-/*   useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setBeerList(memoizedBeers)
-    } else {
-      const filteredBeers = memoizedBeers.filter((beer) =>
-        beer.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setBeerList(filteredBeers);
-    }
-  }, [searchQuery, memoizedBeers]); */
+  }, [searchQuery, memoizedBeers, sortOption, filters, userRatings]);
 
   const clearSearch = () => {
     setSearchQuery('');
@@ -187,19 +195,18 @@ export default function HomeScreen() {
         </Picker>
       </View>
 
-      <View style={styles.filterContainer}>
-        <Text style={styles.filterLabel}>Filter by Country:</Text>
-        <Picker
-          selectedValue={countryFilter}
-          onValueChange={(value) => setCountryFilter(value)}
-          style={styles.picker}
-        >
-          <Picker.Item label="All Countries" value={null} />
-          {countries.map((country, index) => (
-            <Picker.Item key={index} label={country} value={country} />
-          ))}
-        </Picker>
-      </View>
+
+
+       <Button title="Add Filter" onPress={() => setFilterModalVisible(true)} />
+       <FilterModal
+         visible={filterModalVisible}
+         onClose={() => setFilterModalVisible(false)}
+         onApplyFilters={handleApplyFilters}
+         countries={countries}
+         breweries={breweries}
+         beerTypes={beerTypes}
+       />
+
 
       <FlatList
         data={beerList}
