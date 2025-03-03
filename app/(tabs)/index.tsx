@@ -27,6 +27,12 @@ export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [userRatings, setUserRatings] = useState<{ [key: string]: number }>({});
   const [sortOption, setSortOption] = useState<'Name A-Z' | 'Name Z-A' | 'Country A-Z' | 'Country Z-A' | 'Rating Ascending' | 'Rating Descending'>('Rating Descending');
+  const [countries, setCountries] = useState<string[]>([]);
+  const [countryFilter, setCountryFilter] = useState<string | null>(null);
+  const [breweries, setBreweries] = useState<string[]>([]);
+  const [breweryFilter, setBreweryFilter] = useState<string | null>(null);
+  const [beerTypes, setBeerTypes] = useState<string[]>([]);
+  const [beerTypeFilter, setBeerTypeFilter] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -44,6 +50,20 @@ export default function HomeScreen() {
       }
     };
   }, [initializing]);
+
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(FIRESTORE, "Countries"));
+        const countryList = querySnapshot.docs.map((doc) => doc.data().name);
+        setCountries(countryList);
+      } catch (error) {
+        console.error("Error fetching countries:", error);
+      }
+    };
+
+    fetchCountries();
+  }, []);
 
   const fetchBeers = React.useCallback(async () => {
     setLoading(true);
@@ -87,6 +107,10 @@ export default function HomeScreen() {
       );
     }
 
+    if (countryFilter) {
+      filteredBeers = filteredBeers.filter((beer) => beer.country === countryFilter);
+    }
+
     switch (sortOption) {
       case 'Name A-Z':
         filteredBeers = [...filteredBeers].sort((a, b) => a.name.localeCompare(b.name));
@@ -94,12 +118,14 @@ export default function HomeScreen() {
       case 'Name Z-A':
         filteredBeers = [...filteredBeers].sort((a, b) => b.name.localeCompare(a.name));
         break;
+      /*
       case 'Country A-Z':
         filteredBeers = [...filteredBeers].sort((a, b) => (a.country || '').localeCompare(b.country || ''));
         break;
       case 'Country Z-A':
         filteredBeers = [...filteredBeers].sort((a, b) => (b.country || '').localeCompare(a.country || ''));
         break;
+      */
       case 'Rating Ascending':
         filteredBeers = [...filteredBeers].sort((a, b) => (userRatings[a.id] || 0) - (userRatings[b.id] || 0));
         break;
@@ -109,7 +135,7 @@ export default function HomeScreen() {
     }
 
     setBeerList(filteredBeers);
-  }, [searchQuery, memoizedBeers, sortOption, userRatings]);
+  }, [searchQuery, memoizedBeers, sortOption, countryFilter, userRatings]);
 
 /*   useEffect(() => {
     if (searchQuery.trim() === '') {
@@ -146,7 +172,7 @@ export default function HomeScreen() {
           ) : null}
       </View>
 
-      <View style={styles.pickerContainer}>
+      <View style={styles.sortContainer}>
         <Picker
           selectedValue={sortOption}
           onValueChange={(value) => setSortOption(value)}
@@ -158,6 +184,20 @@ export default function HomeScreen() {
           <Picker.Item label="Country Z-A" value="Country Z-A" />
           <Picker.Item label="Rating Ascending" value="Rating Ascending" />
           <Picker.Item label="Rating Descending" value="Rating Descending" />
+        </Picker>
+      </View>
+
+      <View style={styles.filterContainer}>
+        <Text style={styles.filterLabel}>Filter by Country:</Text>
+        <Picker
+          selectedValue={countryFilter}
+          onValueChange={(value) => setCountryFilter(value)}
+          style={styles.picker}
+        >
+          <Picker.Item label="All Countries" value={null} />
+          {countries.map((country, index) => (
+            <Picker.Item key={index} label={country} value={country} />
+          ))}
         </Picker>
       </View>
 
@@ -225,7 +265,17 @@ const styles = StyleSheet.create({
   activeSort: {
     backgroundColor: '#007bff',
   },
-  pickerContainer: {
+  sortContainer: {
+    marginHorizontal: 16,
+    width: '40%',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    backgroundColor: '#fff',
+    overflow: 'hidden',
+    paddingHorizontal: 10,
+  },
+  filterContainer: {
     marginHorizontal: 16,
     width: '40%',
     borderWidth: 1,
