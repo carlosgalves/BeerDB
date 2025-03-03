@@ -69,17 +69,15 @@ export default function HomeScreen() {
   };
 
   const handleApplyFilters = (filterType, selectedValue) => {
-    const updatedFilters = [...filters];
-    const filterIndex = updatedFilters.findIndex((filter) => filter.type === filterType);
+   setFilters((prevFilters) => [
+       ...prevFilters,
+       { type: filterType, value: selectedValue },
+     ]);
+     setFilterModalVisible(false);
+  };
 
-    if (filterIndex > -1) {
-      updatedFilters[filterIndex] = { type: filterType, value: selectedValue };
-    } else {
-      updatedFilters.push({ type: filterType, value: selectedValue });
-    }
-
-    setFilters(updatedFilters);
-    setFilterModalVisible(false);
+  const handleRemoveFilter = (filterType) => {
+    setFilters(filters.filter((filter) => filter.type !== filterType));
   };
 
   const fetchBeers = React.useCallback(async () => {
@@ -212,6 +210,7 @@ export default function HomeScreen() {
           ))}
         </Picker>
       </View>
+
       <View>
         <Text>Active Filters:</Text>
         {filters.length > 0 ? (
@@ -223,6 +222,9 @@ export default function HomeScreen() {
                 <Text>
                   {item.type}: {item.value}
                 </Text>
+                <Pressable onPress={() => handleRemoveFilter(item.type)}>
+                  <Icon name="close-circle" size={18} color="red" />
+                </Pressable>
               </View>
             )}
           />
