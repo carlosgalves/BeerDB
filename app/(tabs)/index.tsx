@@ -76,9 +76,9 @@ export default function HomeScreen() {
      setFilterModalVisible(false);
   };
 
-  const handleRemoveFilter = (filterType) => {
-    setFilters(filters.filter((filter) => filter.type !== filterType));
-  };
+  const handleRemoveFilter = (filterValue) => {
+   setFilters(filters.filter((filter) => filter.value !== filterValue));
+ };
 
   const fetchBeers = React.useCallback(async () => {
     setLoading(true);
@@ -200,6 +200,8 @@ export default function HomeScreen() {
           onValueChange={(value) => {
             if (value === 'Add Filter') {
               setFilterModalVisible(true);
+            } else {
+              handleRemoveFilter(value);
             }
           }}
           style={styles.picker}
@@ -211,27 +213,7 @@ export default function HomeScreen() {
         </Picker>
       </View>
 
-      <View>
-        <Text>Active Filters:</Text>
-        {filters.length > 0 ? (
-          <FlatList
-            data={filters}
-            keyExtractor={(item, index) => index.toString()}
-            renderItem={({ item }) => (
-              <View>
-                <Text>
-                  {item.type}: {item.value}
-                </Text>
-                <Pressable onPress={() => handleRemoveFilter(item.type)}>
-                  <Icon name="close-circle" size={18} color="red" />
-                </Pressable>
-              </View>
-            )}
-          />
-        ) : (
-          <Text>No active filters</Text>
-        )}
-      </View>
+
 
        <FilterModal
          visible={filterModalVisible}
