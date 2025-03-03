@@ -137,14 +137,15 @@ export default function HomeScreen() {
       case 'Name Z-A':
         filteredBeers = [...filteredBeers].sort((a, b) => b.name.localeCompare(a.name));
         break;
-      /*
+
       case 'Country A-Z':
         filteredBeers = [...filteredBeers].sort((a, b) => (a.country || '').localeCompare(b.country || ''));
         break;
       case 'Country Z-A':
         filteredBeers = [...filteredBeers].sort((a, b) => (b.country || '').localeCompare(a.country || ''));
         break;
-      */
+
+
       case 'Rating Ascending':
         filteredBeers = [...filteredBeers].sort((a, b) => (userRatings[a.id] || 0) - (userRatings[b.id] || 0));
         break;
@@ -195,9 +196,41 @@ export default function HomeScreen() {
         </Picker>
       </View>
 
+      <View style={styles.sortContainer}>
+        <Picker
+          selectedValue={'Add Filter'}
+          onValueChange={(value) => {
+            if (value === 'Add Filter') {
+              setFilterModalVisible(true);
+            }
+          }}
+          style={styles.picker}
+        >
+          <Picker.Item label="Add Filter" value="Add Filter" />
+          {filters.map((filter, index) => (
+            <Picker.Item key={index} label={filter.value} value={filter.value} />
+          ))}
+        </Picker>
+      </View>
+      <View>
+        <Text>Active Filters:</Text>
+        {filters.length > 0 ? (
+          <FlatList
+            data={filters}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={({ item }) => (
+              <View>
+                <Text>
+                  {item.type}: {item.value}
+                </Text>
+              </View>
+            )}
+          />
+        ) : (
+          <Text>No active filters</Text>
+        )}
+      </View>
 
-
-       <Button title="Add Filter" onPress={() => setFilterModalVisible(true)} />
        <FilterModal
          visible={filterModalVisible}
          onClose={() => setFilterModalVisible(false)}
@@ -206,7 +239,6 @@ export default function HomeScreen() {
          breweries={breweries}
          beerTypes={beerTypes}
        />
-
 
       <FlatList
         data={beerList}
