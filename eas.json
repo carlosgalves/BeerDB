@@ -9,12 +9,14 @@
       "distribution": "internal",
       "channel": "development",
       "env": {
+        "APP_VARIANT": "development"
       }
     },
     "preview": {
       "distribution": "internal",
       "channel": "preview",
       "env": {
+        "APP_VARIANT": "preview"
       }
     },
     "production": {
