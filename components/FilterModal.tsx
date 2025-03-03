@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,13 @@ import {
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 
-
-export default function FilterModal({ visible, onClose, countries, breweries, beerTypes, onApplyFilters }) {
+export default function FilterModal({ visible, onClose, countries, breweries, beerTypes, onApplyFilters, filters }) {
   const [filterType, setFilterType] = useState(null);
   const [selectedValue, setSelectedValue] = useState(null);
+
+  const activeFilterTypes = filters.map((filter) => filter.type);
+  const isCountrySelected = activeFilterTypes.includes('country');
+  const isBrewerySelected = activeFilterTypes.includes('brewery');
 
   const getOptions = () => {
     switch (filterType) {
@@ -33,13 +36,24 @@ export default function FilterModal({ visible, onClose, countries, breweries, be
         <View style={styles.modalContainer}>
           <Text style={styles.modalTitle}>Select a Filter</Text>
           <View style={styles.filterOptions}>
-            <Pressable style={styles.filterButton} onPress={() => setFilterType('country')}>
-              <Text style={styles.filterText}>Country</Text>
+            <Pressable
+              style={[styles.filterButton, isBrewerySelected && styles.disabledButton]}
+              onPress={() => !isBrewerySelected && setFilterType('country')}
+              disabled={isBrewerySelected}
+            >
+              <Text style={[styles.filterText, isBrewerySelected && styles.disabledText]}>Country</Text>
             </Pressable>
-            <Pressable style={styles.filterButton} onPress={() => setFilterType('brewery')}>
-              <Text style={styles.filterText}>Brewery</Text>
+            <Pressable
+              style={[styles.filterButton, isCountrySelected && styles.disabledButton]}
+              onPress={() => !isCountrySelected && setFilterType('brewery')}
+              disabled={isCountrySelected}
+            >
+              <Text style={[styles.filterText, isCountrySelected && styles.disabledText]}>Brewery</Text>
             </Pressable>
-            <Pressable style={styles.filterButton} onPress={() => setFilterType('beerType')}>
+            <Pressable
+              style={styles.filterButton}
+              onPress={() => setFilterType('beerType')}
+            >
               <Text style={styles.filterText}>Beer Type</Text>
             </Pressable>
           </View>
@@ -101,8 +115,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#ddd',
     borderRadius: 5,
   },
+  disabledButton: {
+    backgroundColor: '#aaa',
+  },
   filterText: {
     fontSize: 16,
+  },
+  disabledText: {
+    color: '#666',
   },
   picker: {
     width: '100%',

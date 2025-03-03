@@ -222,6 +222,7 @@ export default function HomeScreen() {
          countries={countries}
          breweries={breweries}
          beerTypes={beerTypes}
+         filters={filters}
        />
 
       <FlatList
