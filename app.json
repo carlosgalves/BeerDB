@@ -2,7 +2,7 @@
   "expo": {
     "name": "beerdb",
     "slug": "beerdb",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
@@ -46,7 +46,7 @@
       "eas": {
         "projectId": "efb505ce-2fc7-4e9a-9234-802712fc1204"
       },
-      "buildNumber": "3"
+      "buildNumber": "4"
     },
     "owner": "carlosgalves",
     "runtimeVersion": {
