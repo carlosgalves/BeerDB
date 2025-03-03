@@ -122,10 +122,16 @@ export default function HomeScreen() {
       );
     }
 
-    filters.forEach(({ type, value }) => {
-      if (value) {
-        filteredBeers = filteredBeers.filter((beer) => beer[type]?.toLowerCase() === value.toLowerCase());
-      }
+    const filterGroups = filters.reduce((acc, { type, value }) => {
+      if (!acc[type]) acc[type] = [];
+      acc[type].push(value.toLowerCase());
+      return acc;
+    }, {});
+
+    filteredBeers = filteredBeers.filter((beer) => {
+      return Object.entries(filterGroups).every(([type, values]) => {
+        return values.includes(beer[type]?.toLowerCase());
+      });
     });
 
     switch (sortOption) {
