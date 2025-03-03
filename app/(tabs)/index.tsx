@@ -7,7 +7,8 @@ import {
   ActivityIndicator,
   Pressable,
   TextInput,
-  Text
+  Text,
+  Button
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import BeerCard from '../../components/BeerCard';
@@ -15,6 +16,8 @@ import { FIRESTORE, FIREBASE_AUTH } from '../../firebaseConfig';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, FirebaseAuthTypes } from 'firebase/auth';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Picker } from '@react-native-picker/picker';
+import FilterModal from '../../components/FilterModal';
 
 export default function HomeScreen() {
 
@@ -25,6 +28,12 @@ export default function HomeScreen() {
   const [beerList, setBeerList] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [userRatings, setUserRatings] = useState<{ [key: string]: number }>({});
+  const [sortOption, setSortOption] = useState<'Name A-Z' | 'Name Z-A' | 'Country A-Z' | 'Country Z-A' | 'Rating Ascending' | 'Rating Descending'>('Rating Descending');
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [countries, setCountries] = useState([]);
+  const [breweries, setBreweries] = useState([]);
+  const [beerTypes, setBeerTypes] = useState([]);
+  const [filters, setFilters] = useState([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -42,6 +51,36 @@ export default function HomeScreen() {
       }
     };
   }, [initializing]);
+
+   useEffect(() => {
+    fetchData('Countries', setCountries);
+    fetchData('Breweries', setBreweries);
+    fetchData('BeerTypes', setBeerTypes);
+  }, []);
+
+  const fetchData = async (collectionName, setState) => {
+    try {
+      const querySnapshot = await getDocs(collection(FIRESTORE, collectionName));
+      const dataList = querySnapshot.docs.map((doc) => doc.data().name);
+      setState(dataList);
+    } catch (error) {
+      console.error(`Error fetching ${collectionName}:`, error);
+    }
+  };
+
+  const handleApplyFilters = (filterType, selectedValue) => {
+    const updatedFilters = [...filters];
+    const filterIndex = updatedFilters.findIndex((filter) => filter.type === filterType);
+
+    if (filterIndex > -1) {
+      updatedFilters[filterIndex] = { type: filterType, value: selectedValue };
+    } else {
+      updatedFilters.push({ type: filterType, value: selectedValue });
+    }
+
+    setFilters(updatedFilters);
+    setFilterModalVisible(false);
+  };
 
   const fetchBeers = React.useCallback(async () => {
     setLoading(true);
@@ -77,15 +116,45 @@ export default function HomeScreen() {
   }, [fetchBeers]);
 
   useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setBeerList(memoizedBeers)
-    } else {
-      const filteredBeers = memoizedBeers.filter((beer) =>
+    let filteredBeers = memoizedBeers;
+
+    if (searchQuery.trim() !== '') {
+      filteredBeers = filteredBeers.filter((beer) =>
         beer.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
-      setBeerList(filteredBeers);
     }
-  }, [searchQuery, memoizedBeers]);
+
+    filters.forEach(({ type, value }) => {
+      if (value) {
+        filteredBeers = filteredBeers.filter((beer) => beer[type]?.toLowerCase() === value.toLowerCase());
+      }
+    });
+
+    switch (sortOption) {
+      case 'Name A-Z':
+        filteredBeers = [...filteredBeers].sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case 'Name Z-A':
+        filteredBeers = [...filteredBeers].sort((a, b) => b.name.localeCompare(a.name));
+        break;
+      /*
+      case 'Country A-Z':
+        filteredBeers = [...filteredBeers].sort((a, b) => (a.country || '').localeCompare(b.country || ''));
+        break;
+      case 'Country Z-A':
+        filteredBeers = [...filteredBeers].sort((a, b) => (b.country || '').localeCompare(a.country || ''));
+        break;
+      */
+      case 'Rating Ascending':
+        filteredBeers = [...filteredBeers].sort((a, b) => (userRatings[a.id] || 0) - (userRatings[b.id] || 0));
+        break;
+      case 'Rating Descending':
+        filteredBeers = [...filteredBeers].sort((a, b) => (userRatings[b.id] || 0) - (userRatings[a.id] || 0));
+        break;
+    }
+
+    setBeerList(filteredBeers);
+  }, [searchQuery, memoizedBeers, sortOption, filters, userRatings]);
 
   const clearSearch = () => {
     setSearchQuery('');
@@ -110,6 +179,35 @@ export default function HomeScreen() {
             </Pressable>
           ) : null}
       </View>
+
+      <View style={styles.sortContainer}>
+        <Picker
+          selectedValue={sortOption}
+          onValueChange={(value) => setSortOption(value)}
+          style={styles.picker}
+        >
+          <Picker.Item label="Name A-Z" value="Name A-Z" />
+          <Picker.Item label="Name Z-A" value="Name Z-A" />
+          <Picker.Item label="Country A-Z" value="Country A-Z" />
+          <Picker.Item label="Country Z-A" value="Country Z-A" />
+          <Picker.Item label="Rating Ascending" value="Rating Ascending" />
+          <Picker.Item label="Rating Descending" value="Rating Descending" />
+        </Picker>
+      </View>
+
+
+
+       <Button title="Add Filter" onPress={() => setFilterModalVisible(true)} />
+       <FilterModal
+         visible={filterModalVisible}
+         onClose={() => setFilterModalVisible(false)}
+         onApplyFilters={handleApplyFilters}
+         countries={countries}
+         breweries={breweries}
+         beerTypes={beerTypes}
+       />
+
+
       <FlatList
         data={beerList}
         keyExtractor={(item) => item.id}
@@ -159,5 +257,45 @@ const styles = StyleSheet.create({
     color: '#ccc',
     fontSize: 16,
     fontWeight: 'bold',
-  }
+  },
+  sortContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  sortButton: {
+    padding: 10,
+    marginHorizontal: 5,
+    backgroundColor: '#ddd',
+    borderRadius: 5,
+  },
+  activeSort: {
+    backgroundColor: '#007bff',
+  },
+  sortContainer: {
+    marginHorizontal: 16,
+    width: '40%',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    backgroundColor: '#fff',
+    overflow: 'hidden',
+    paddingHorizontal: 10,
+  },
+  filterContainer: {
+    marginHorizontal: 16,
+    width: '40%',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    backgroundColor: '#fff',
+    overflow: 'hidden',
+    paddingHorizontal: 10,
+  },
+  picker: {
+    height: 50,
+    width: '100%',
+    color: '#333',
+  },
+
 });
