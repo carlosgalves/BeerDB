@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+
 
 export default function FilterModal({ visible, onClose, countries, breweries, beerTypes, onApplyFilters, filters }) {
   const [filterType, setFilterType] = useState(null);

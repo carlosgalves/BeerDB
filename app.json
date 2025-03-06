@@ -46,13 +46,17 @@
       "eas": {
         "projectId": "efb505ce-2fc7-4e9a-9234-802712fc1204"
       },
-      "buildNumber": "3"
+      "buildNumber": "4"
     },
     "owner": "carlosgalves",
     "runtimeVersion": {
       "policy": "appVersion"
     },
     "updates": {
+      "checkAutomatically": "ON_LOAD",
+      "requestHeaders": {
+        "expo-channel-name": "preview"
+      },
       "url": "https://u.expo.dev/efb505ce-2fc7-4e9a-9234-802712fc1204"
     }
   }

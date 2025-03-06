@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image, Button, TouchableOpacity } from 'react-native';
 import Toast from '@/components/ToastAndroid';
 import { useLocalSearchParams, Stack, useNavigation } from 'expo-router';
+import { supabase } from '../../../utils/supabase.config.js';
 import { FIRESTORE, FIREBASE_AUTH } from '../../../firebaseConfig';
 import { doc, getDoc, updateDoc, collection, setDoc } from 'firebase/firestore';
 import { flagImages, beerImages} from '../../../data/mappers/imageMapper'
@@ -27,6 +28,9 @@ export default function BeerDetails() {
   })
   const [allowRating, setAllowRating] = useState(false)
   const [ratingType, setRatingType] = useState('global')
+  const [countryName, setCountryName] = useState('');
+  const [breweryName, setBreweryName] = useState('');
+  const [beerType, setBeerType] = useState('');
 
 
   useEffect(() => {
@@ -40,10 +44,61 @@ export default function BeerDetails() {
         afterTasteRating: 0,
       });
       try {
-        const beerRef = doc(FIRESTORE, 'beers', id);
-        const beerDoc = await getDoc(beerRef);
+        const { data: beerData, error: beerError } = await supabase
+          .from('Beer')
+          .select()
+          .eq('id', id)
+          .single();
 
-        if (beerDoc.exists()) {
+        if (beerError || !beerData) {
+          console.error('Error fetching beer:', beerError);
+          Toast.show('Error fetching beer');
+          setBeer(null);
+          return;
+        }
+
+        setBeer(beerData);
+
+        // fetch country name
+        const {data: countryData, error: countryError} = await supabase
+          .from('Country')
+          .select('name')
+          .eq('iso', beerData.countryIso)
+          .single()
+
+        if (!countryError && countryData) {
+          setCountryName(countryData.name);
+        } else {
+          console.error('Error fetching country:', countryError);
+        }
+
+        // fetch brewery name
+        const {data: breweryData, error: breweryError} = await supabase
+          .from('Brewery')
+          .select('name')
+          .eq('id', beerData.breweryId)
+          .single()
+
+        if (!breweryError && breweryData) {
+          setBreweryName(breweryData.name);
+        } else {
+          console.error('Error fetching brewery:', breweryError);
+        }
+
+      // fetch beer type
+      const {data: beerType, error: beerTypeError} = await supabase
+        .from('BeerType')
+        .select('name')
+        .eq('name', beerData.type)
+        .single()
+
+      if (!beerTypeError && beerType) {
+        setBeerType(beerType.name);
+      } else {
+        console.error('Error fetching beer type:', beerTypeError);
+      }
+
+        /* if (beerDoc.exists()) {
           const beer = { id: beerDoc.id, ...beerDoc.data() };
           setBeer(beer);
 
@@ -62,7 +117,7 @@ export default function BeerDetails() {
             afterTasteRating: 0,
           });
           console.log('No such beer!');
-        }
+        } */
       } catch (error) {
         console.error("Error fetching beer:", error);
         Toast.show('Error fetching beer')
@@ -158,7 +213,7 @@ export default function BeerDetails() {
   }
 
   const {
-    name, brewery, country, countryIso, type, description, abv, tags, image,
+    name, brewery, countryIso, type, description, abv, tags, image,
     overallRating, aromaRating, tasteRating, afterTasteRating
   } = beer;
 
@@ -179,7 +234,7 @@ export default function BeerDetails() {
       }}
     />
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.subtitle}>Brewery: {brewery || 'Unknown'}</Text>
+      <Text style={styles.subtitle}>Brewery: {breweryName || 'Unknown'}</Text>
       <View style={styles.coverContainer}>
         <Image
           source={
@@ -197,8 +252,8 @@ export default function BeerDetails() {
           style={styles.flagImage}
         />
       </View>
-      <Text style={styles.country}>Country: {country}</Text>
-      <Text style={styles.type}>Type: {type}</Text>
+      <Text style={styles.country}>Country: {countryName}</Text>
+      <Text style={styles.type}>Type: {beerType}</Text>
       <Text style={styles.description}>Description: {description}</Text>
       <Text style={styles.alcohol}>ABV: {abv}%</Text>
       <Text style={styles.tags}>Tags: {tags?.join(', ')}</Text>
