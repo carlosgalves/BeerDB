@@ -13,6 +13,7 @@ import {
 import { Link, useRouter } from 'expo-router';
 import BeerCard from '../../components/BeerCard';
 import { FIRESTORE, FIREBASE_AUTH } from '../../firebaseConfig';
+import { supabase } from '../../utils/supabase.config.js';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, FirebaseAuthTypes } from 'firebase/auth';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -53,15 +54,19 @@ export default function HomeScreen() {
   }, [initializing]);
 
    useEffect(() => {
-    fetchData('Countries', setCountries);
-    fetchData('Breweries', setBreweries);
-    fetchData('BeerTypes', setBeerTypes);
+    fetchData('country', setCountries);
+    fetchData('brewery', setBreweries);
+    fetchData('beer_type', setBeerTypes);
   }, []);
 
   const fetchData = async (collectionName, setState) => {
     try {
-      const querySnapshot = await getDocs(collection(FIRESTORE, collectionName));
-      const dataList = querySnapshot.docs.map((doc) => doc.data().name);
+      const { data, error } = await supabase.from(collectionName).select('name');
+
+      if (error) {
+        throw error;
+      }
+      const dataList = data.map((item) => item.name);
       setState(dataList);
     } catch (error) {
       console.error(`Error fetching ${collectionName}:`, error);
