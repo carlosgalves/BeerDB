@@ -69,7 +69,8 @@ return {
       eas: {
         projectId: EAS_PROJECT_ID,
       },
-      buildNumber: "4"
+      buildNumber: "5",
+
     },
     owner: OWNER,
     runtimeVersion:  "1.0.0"
