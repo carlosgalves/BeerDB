@@ -31,7 +31,7 @@ class BeerCard extends PureComponent<BeerCardProps> {
         <View style={styles.flagContainer}>
           <Image
             source={
-                image
+                countryIso
                   ? { uri: `https://dkawnlfcrjkdsivajojq.supabase.co/storage/v1/object/public/flags/${countryIso}.png` }
                   : require('../assets/images/placeholders/unknown-flag.png')
               }
