@@ -15,9 +15,9 @@ import { getAuth } from 'firebase/auth';
 export default function BeerDetails() {
   const { id } = useLocalSearchParams()
   const navigation = useNavigation()
-  const user = getAuth().currentUser
-  const userId = user.uid
-  const isUserAnonymous = user.isAnonymous
+  const [user, setUser] = useState(null);
+  const userId = user?.id;
+  const isUserAnonymous = user?.isAnonymous
   const [loading, setLoading] = useState(true)
   const [beer, setBeer] = useState()
   const [userRatings, setUserRatings] = useState({
@@ -32,6 +32,28 @@ export default function BeerDetails() {
   const [breweryName, setBreweryName] = useState('');
   const [beerType, setBeerType] = useState('');
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      console.log(user)
+      if (error) {
+        console.error('Error fetching user:', error);
+      } else {
+        setUser(user);
+      }
+      setLoading(false);
+    };
+
+    fetchUser();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     setLoading(true)

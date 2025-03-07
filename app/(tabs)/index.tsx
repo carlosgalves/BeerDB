@@ -12,19 +12,15 @@ import {
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import BeerCard from '../../components/BeerCard';
-import { FIRESTORE, FIREBASE_AUTH } from '../../firebaseConfig';
 import { supabase } from '../../utils/supabase.config.js';
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
-import { onAuthStateChanged, FirebaseAuthTypes } from 'firebase/auth';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Picker } from '@react-native-picker/picker';
 import FilterModal from '../../components/FilterModal';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 export default function HomeScreen() {
-
   const [loading, setLoading] = useState(true);
   const [initializing, setInitializing] = useState(true);
-  const [user, setUser] = useState<FirebaseAuthTypes.User | null>();
+  const [user, setUser] = useState(null);
   const [beers, setBeers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [userRatings, setUserRatings] = useState<{ [key: string]: number }>({});
@@ -38,18 +34,33 @@ export default function HomeScreen() {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(FIREBASE_AUTH, (user) => {
-      setUser(user);
+    // Fetch user info
+    const fetchUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error('Error fetching user:', error);
+      } else {
+        setUser(data?.user);
+      }
+      setInitializing(false);  // Stop initializing once we fetch user data
+    };
+
+    // If initializing, call fetchUser
+    if (initializing) {
+      fetchUser();
+    }
+
+    // Subscribe to auth state changes
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user || null);
       if (initializing) setInitializing(false);
-      if (!user) {
+      if (!session?.user) {
         router.replace('/auth');
       }
     });
 
     return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
+      authListener.subscription.unsubscribe();
     };
   }, [initializing]);
 
@@ -102,9 +113,9 @@ export default function HomeScreen() {
       setBeers(data);
 
       // Fetch user ratings if user is logged in
-      if (user) {
+      /* if (user) {
         await fetchUserRatings(data);
-      }
+      } */
     } catch (error) {
       console.error('Error fetching beers:', error);
     } finally {
