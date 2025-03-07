@@ -17,7 +17,7 @@ export default function BeerDetails() {
   const navigation = useNavigation()
   const [user, setUser] = useState(null);
   const userId = user?.id;
-  const isUserAnonymous = user?.isAnonymous
+  const isUserAnonymous = !user?.app_metadata?.provider
   const [loading, setLoading] = useState(true)
   const [beer, setBeer] = useState(null)
   const [userRatings, setUserRatings] = useState({
