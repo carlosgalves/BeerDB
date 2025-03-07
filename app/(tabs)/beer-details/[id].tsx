@@ -75,12 +75,12 @@ export default function BeerDetails() {
 
         setBeer(beerData);
 
-        // fetch country name
-        const {data: countryData, error: countryError} = await supabase
+        // Fetch country name
+        const { data: countryData, error: countryError } = await supabase
           .from('Country')
           .select('name')
           .eq('iso', beerData.countryIso)
-          .single()
+          .single();
 
         if (!countryError && countryData) {
           setCountryName(countryData.name);
@@ -88,12 +88,12 @@ export default function BeerDetails() {
           console.error('Error fetching country:', countryError);
         }
 
-        // fetch brewery name
-        const {data: breweryData, error: breweryError} = await supabase
+        // Fetch brewery name
+        const { data: breweryData, error: breweryError } = await supabase
           .from('Brewery')
           .select('name')
           .eq('id', beerData.breweryId)
-          .single()
+          .single();
 
         if (!breweryError && breweryData) {
           setBreweryName(breweryData.name);
@@ -101,61 +101,61 @@ export default function BeerDetails() {
           console.error('Error fetching brewery:', breweryError);
         }
 
-      // fetch beer type
-      const {data: beerType, error: beerTypeError} = await supabase
-        .from('BeerType')
-        .select('name')
-        .eq('name', beerData.type)
-        .single()
-
-      if (!beerTypeError && beerType) {
-        setBeerType(beerType.name);
-      } else {
-        console.error('Error fetching beer type:', beerTypeError);
-      }
-
-
-
-      if (user) {
-        // Fetch user's ratings for this beer if user is logged in
-        const { data: userRatingData, error: userRatingError } = await supabase
-          .from('UserRating')
-          .select('*')
-          .eq('userId', user.id)
-          .eq('beerId', id)
+        // Fetch beer type
+        const { data: beerType, error: beerTypeError } = await supabase
+          .from('BeerType')
+          .select('name')
+          .eq('name', beerData.type)
           .single();
 
-        if (!userRatingError && userRatingData) {
-          // User has rated this beer before
-          setUserRatings({
-            overallRating: userRatingData.overallRating || 0,
-            aromaRating: userRatingData.aromaRating || 0,
-            tasteRating: userRatingData.tasteRating || 0,
-            afterTasteRating: userRatingData.afterTasteRating || 0,
-          });
-
-          // Set rating type to user since they have ratings
-          setRatingType('user');
+        if (!beerTypeError && beerType) {
+          setBeerType(beerType.name);
         } else {
-          // User hasn't rated this beer
-          setUserRatings({
-            overallRating: 0,
-            tasteRating: 0,
-            aromaRating: 0,
-            afterTasteRating: 0,
-          });
+          console.error('Error fetching beer type:', beerTypeError);
         }
-      }
+
+        // Fetch user's rating for this beer if user is logged in
+        if (user) {
+          const { data: userRatingData, error: userRatingError } = await supabase
+            .from('UserRating')
+            .select('*')
+            .eq('userId', user.id)
+            .eq('beerId', id)
+            .single();
+
+          if (!userRatingError && userRatingData) {
+            // User has rated this beer before
+            setUserRatings({
+              overallRating: userRatingData.overallRating || 0,
+              aromaRating: userRatingData.aromaRating || 0,
+              tasteRating: userRatingData.tasteRating || 0,
+              afterTasteRating: userRatingData.afterTasteRating || 0,
+            });
+            setAllowRating(false);  // Disable further rating
+            setRatingType('user');
+          } else {
+            // User hasn't rated this beer, allow them to rate
+            setUserRatings({
+              overallRating: 0,
+              tasteRating: 0,
+              aromaRating: 0,
+              afterTasteRating: 0,
+            });
+            setAllowRating(true);
+            setRatingType('global');
+          }
+        }
 
       } catch (error) {
         console.error("Error fetching beer:", error);
-        Toast.show('Error fetching beer')
+        Toast.show('Error fetching beer');
       } finally {
         setLoading(false);
       }
-    }
+    };
+
     fetchBeerData();
-  }, [id]);
+  }, [id, user]);
 
   useEffect(() => {
     if (loading) return;
@@ -196,8 +196,6 @@ export default function BeerDetails() {
                     tasteRating: tasteRating,
                     afterTasteRating: afterTasteRating,
                     overallRating: overallRating,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
                   }
                 ],
                 {
