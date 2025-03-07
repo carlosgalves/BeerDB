@@ -72,10 +72,7 @@ return {
       buildNumber: "4"
     },
     owner: OWNER,
-    runtimeVersion: {
-      policy: "manual",
-      version: "1.0"
-    }
+    runtimeVersion:  "1.0.0"
   };
 };
 
