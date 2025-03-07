@@ -34,6 +34,7 @@ export default function HomeScreen() {
   const [breweries, setBreweries] = useState([]);
   const [beerTypes, setBeerTypes] = useState([]);
   const [filters, setFilters] = useState([]);
+  const [activeFilterType, setActiveFilterType] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -56,7 +57,7 @@ export default function HomeScreen() {
     fetchData('Country');
     fetchData('Brewery');
     fetchData('BeerType');
-    fetchBeers(); // Fetch beers once when component mounts
+    fetchBeers();
   }, []);
 
   const fetchData = async (collectionName) => {
@@ -70,12 +71,6 @@ export default function HomeScreen() {
       } else if (collectionName === 'BeerType') {
         query = query.select('name');
       }
-
-    const filterGroups = filters.reduce((acc, { type, value }) => {
-      if (!acc[type]) acc[type] = [];
-      acc[type].push(value.toLowerCase());
-      return acc;
-    }, {});
 
       const { data, error } = await query;
 
@@ -139,6 +134,11 @@ export default function HomeScreen() {
     }
   };
 
+  const openFilterModal = (filterType) => {
+    setActiveFilterType(filterType);
+    setFilterModalVisible(true);
+  };
+
   const handleApplyFilters = useCallback((filterType, selectedValue) => {
     setFilters((prevFilters) => {
       if (!selectedValue) {
@@ -148,7 +148,6 @@ export default function HomeScreen() {
 
       let value = selectedValue;
 
-      // Convert name to proper filter object with ID/ISO references
       if (filterType === 'country') {
         const countryObject = countries.find(c => c.name === selectedValue);
         if (countryObject) {
@@ -161,7 +160,6 @@ export default function HomeScreen() {
         }
       }
 
-      // Remove existing filter of the same type and add a new one
       return [
         ...prevFilters.filter(filter => filter.type !== filterType),
         { type: filterType, value, displayValue: selectedValue },
@@ -171,12 +169,18 @@ export default function HomeScreen() {
     setFilterModalVisible(false);
   }, [countries, breweries]);
 
-  const handleRemoveFilter = useCallback((filterValue) => {
-    setFilters((prevFilters) => prevFilters.filter(filter => filter.value !== filterValue));
+  const handleRemoveFilter = useCallback((filterToRemove) => {
+    setFilters((prevFilters) => prevFilters.filter(filter =>
+      !(filter.type === filterToRemove.type && filter.value === filterToRemove.value)
+    ));
   }, []);
 
   const clearSearch = () => {
     setSearchQuery('');
+  };
+
+  const clearAllFilters = () => {
+    setFilters([]);
   };
 
   const refreshData = async () => {
@@ -187,7 +191,7 @@ export default function HomeScreen() {
   const filteredBeers = useMemo(() => {
     let filtered = [...beers];
 
-    // Apply search filter
+    // Search
     if (searchQuery.trim()) {
       filtered = filtered.filter(beer =>
         beer.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -232,7 +236,7 @@ export default function HomeScreen() {
     }
 
     return filtered;
-  }, [beers, searchQuery, filters, sortOption, filters, userRatings]);
+  }, [beers, searchQuery, filters, sortOption, userRatings]);
 
 
   if (loading || initializing) {
@@ -247,52 +251,77 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.searchBarContainer}>
-        <TextInput
-          style={styles.searchBar}
-          placeholder="Search"
-          value={searchQuery}
-          onChangeText={(text) => setSearchQuery(text)}
-        />
-        {searchQuery ? (
-          <Pressable onPress={clearSearch}>
-            <Icon name="close-circle" size={24} style={styles.clearButton} />
-          </Pressable>
-        ) : null}
+        <View style={styles.searchBarWrapper}>
+          <Icon name="magnify" size={20} color="#ccc" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchBar}
+            placeholder="Search"
+            value={searchQuery}
+            onChangeText={(text) => setSearchQuery(text)}
+          />
+          {searchQuery ? (
+            <Pressable onPress={clearSearch}>
+              <Icon name="close-circle" size={24} style={styles.clearButton} />
+            </Pressable>
+          ) : null}
+        </View>
       </View>
 
-      <View style={styles.sortContainer}>
+      <View style={styles.filtersRow}>
         <Picker
           selectedValue={sortOption}
           onValueChange={(value) => setSortOption(value)}
           style={styles.picker}
         >
+          <Picker.Item label="Rating ↓" value="Rating Descending" />
+          <Picker.Item label="Rating ↑" value="Rating Ascending" />
           <Picker.Item label="Name A-Z" value="Name A-Z" />
           <Picker.Item label="Name Z-A" value="Name Z-A" />
           <Picker.Item label="Country A-Z" value="Country A-Z" />
           <Picker.Item label="Country Z-A" value="Country Z-A" />
-          <Picker.Item label="Rating Ascending" value="Rating Ascending" />
-          <Picker.Item label="Rating Descending" value="Rating Descending" />
         </Picker>
+
+        <Pressable
+          style={styles.filterButton}
+          onPress={() => openFilterModal()}
+        >
+          <Text style={styles.filterButtonText}>Add Filter</Text>
+        </Pressable>
       </View>
 
-       <View style={styles.sortContainer}>
-         <Picker
-           selectedValue={'Add Filter'}
-           onValueChange={(value) => {
-             if (value === 'Add Filter') {
-               setFilterModalVisible(true);
-             } else {
-               handleRemoveFilter(value);
-             }
-           }}
-           style={styles.picker}
-         >
-           <Picker.Item label="Add Filter" value="Add Filter" />
-           {filters.map((filter, index) => (
-             <Picker.Item key={index} label={filter.value} value={filter.value} />
-           ))}
-         </Picker>
-       </View>
+      {filters.length > 0 && (
+        <View style={styles.activeFiltersContainer}>
+          <View style={styles.activeFiltersHeader}>
+            <Text style={styles.activeFiltersTitle}>Active Filters:</Text>
+            <Pressable onPress={clearAllFilters} style={styles.clearAllButton}>
+              <Text style={styles.clearAllText}>Clear All</Text>
+            </Pressable>
+          </View>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.activeFiltersContent}>
+            {filters.map((filter, index) => (
+              <View key={index} style={styles.activeFilterChip}>
+                <Text style={styles.activeFilterText}>
+                  {filter.type === 'country' ? 'Country: ' :
+                   filter.type === 'brewery' ? 'Brewery: ' :
+                   'Type: '}
+                  {filter.displayValue}
+                </Text>
+                <Pressable onPress={() => handleRemoveFilter(filter)}>
+                  <Icon name="close-circle" size={16} color="#666" />
+                </Pressable>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
+      {/* Results Count */}
+      <View style={styles.resultsContainer}>
+        <Text style={styles.resultsText}>
+          {filteredBeers.length} {filteredBeers.length === 1 ? 'beer' : 'beers'} found
+        </Text>
+      </View>
 
       <FilterModal
         visible={filterModalVisible}
@@ -302,6 +331,7 @@ export default function HomeScreen() {
         breweries={breweryNames}
         beerTypes={beerTypeNames}
         filters={filters}
+        activeFilterType={activeFilterType}
       />
 
       <FlatList
@@ -341,17 +371,24 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   searchBarContainer: {
+    alignItems: 'center',
+    padding: 16,
+  },
+  searchBarWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    margin: 16,
-  },
-  searchBar: {
-    height: 40,
-    flex: 1,
     borderColor: '#ccc',
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 10,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchBar: {
+    flex: 1,
+    height: 40,
+    fontSize: 16,
   },
   clearButton: {
     marginLeft: 10,
@@ -359,44 +396,97 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  filtersRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
   sortContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 10,
+    alignItems: 'center',
+    width: '50%',
   },
-  sortButton: {
-    padding: 10,
-    marginHorizontal: 5,
-    backgroundColor: '#ddd',
-    borderRadius: 5,
-  },
-  activeSort: {
-    backgroundColor: '#007bff',
-  },
-  sortContainer: {
-    marginHorizontal: 16,
-    width: '40%',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    backgroundColor: '#fff',
-    overflow: 'hidden',
-    paddingHorizontal: 10,
-  },
-  filterContainer: {
-    marginHorizontal: 16,
-    width: '40%',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    backgroundColor: '#fff',
-    overflow: 'hidden',
-    paddingHorizontal: 10,
+  labelText: {
+    fontSize: 14,
+    marginRight: 8,
+    flexShrink: 0,
   },
   picker: {
-    height: 50,
-    width: '100%',
+    width: '30%',
+    flex: 1,
+    marginRight: 20,
     color: '#333',
   },
-
+  filtersContainer: {
+    marginBottom: 8,
+    paddingHorizontal: 16,
+  },
+  filtersRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  filterButtonsContainer: {
+    paddingVertical: 8,
+  },
+  filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'blue',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginRight:20
+  },
+  filterButtonText: {
+    color: 'blue',
+    fontWeight: '500',
+  },
+  activeFiltersContainer: {
+    marginHorizontal: 16,
+    marginBottom: 8,
+  },
+  activeFiltersHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  activeFiltersTitle: {
+    fontSize: 14,
+  },
+  clearAllButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  clearAllText: {
+    color: 'red',
+    fontSize: 14,
+  },
+  activeFiltersContent: {
+    flexDirection: 'row',
+    paddingBottom: 8,
+  },
+  activeFilterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  activeFilterText: {
+    fontSize: 14,
+    color: 'blue',
+    marginRight: 8,
+  },
+  resultsContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  resultsText: {
+    fontSize: 14,
+  },
 });
