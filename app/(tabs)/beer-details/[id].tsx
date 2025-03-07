@@ -4,9 +4,9 @@ import Toast from '@/components/ToastAndroid';
 import { useLocalSearchParams, Stack, useNavigation } from 'expo-router';
 import { supabase } from '../../../utils/supabase.config.js';
 import { FIRESTORE, FIREBASE_AUTH } from '../../../firebaseConfig';
-import { doc, getDoc, updateDoc, collection, setDoc } from 'firebase/firestore';
-import { flagImages, beerImages} from '../../../data/mappers/imageMapper'
-import SwitchSelector from 'react-native-switch-selector'
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { flagImages, beerImages } from '../../../data/mappers/imageMapper'
+import SwitchSelector from 'react-native-switch-selector';
 import { Ionicons } from '@expo/vector-icons';
 import { Rating } from 'react-native-ratings';
 import { getAuth } from 'firebase/auth';
@@ -19,7 +19,7 @@ export default function BeerDetails() {
   const userId = user?.id;
   const isUserAnonymous = user?.isAnonymous
   const [loading, setLoading] = useState(true)
-  const [beer, setBeer] = useState()
+  const [beer, setBeer] = useState(null)
   const [userRatings, setUserRatings] = useState({
     overallRating: 0,
     tasteRating: 0,
@@ -35,7 +35,6 @@ export default function BeerDetails() {
   useEffect(() => {
     const fetchUser = async () => {
       const { data: { user }, error } = await supabase.auth.getUser();
-      console.log(user)
       if (error) {
         console.error('Error fetching user:', error);
       } else {
@@ -55,17 +54,12 @@ export default function BeerDetails() {
     };
   }, []);
 
+  // Fetch beer details from Supabase
   useEffect(() => {
-    setLoading(true)
-
-    async function fetchBeerData() {
-      setUserRatings({
-        overallRating: 0,
-        tasteRating: 0,
-        aromaRating: 0,
-        afterTasteRating: 0,
-      });
+    const fetchBeerData = async () => {
+      setLoading(true);
       try {
+        // Fetch beer data
         const { data: beerData, error: beerError } = await supabase
           .from('Beer')
           .select()
@@ -120,26 +114,39 @@ export default function BeerDetails() {
         console.error('Error fetching beer type:', beerTypeError);
       }
 
-        /* if (beerDoc.exists()) {
-          const beer = { id: beerDoc.id, ...beerDoc.data() };
-          setBeer(beer);
 
-          const userRatingRef = doc(beerRef, 'ratings', userId);
-          const userRatingDoc = await getDoc(userRatingRef);
 
-          if (userRatingDoc.exists()) {
-            const { tasteRating = 0, aromaRating = 0, afterTasteRating = 0, overallRating = 0 } = userRatingDoc.data();
-            setUserRatings({ tasteRating, aromaRating, afterTasteRating, overallRating });
-          }
+      if (user) {
+        // Fetch user's ratings for this beer if user is logged in
+        const { data: userRatingData, error: userRatingError } = await supabase
+          .from('UserRating')
+          .select('*')
+          .eq('userId', user.id)
+          .eq('beerId', id)
+          .single();
+
+        if (!userRatingError && userRatingData) {
+          // User has rated this beer before
+          setUserRatings({
+            overallRating: userRatingData.overallRating || 0,
+            aromaRating: userRatingData.aromaRating || 0,
+            tasteRating: userRatingData.tasteRating || 0,
+            afterTasteRating: userRatingData.afterTasteRating || 0,
+          });
+
+          // Set rating type to user since they have ratings
+          setRatingType('user');
         } else {
+          // User hasn't rated this beer
           setUserRatings({
             overallRating: 0,
             tasteRating: 0,
             aromaRating: 0,
             afterTasteRating: 0,
           });
-          console.log('No such beer!');
-        } */
+        }
+      }
+
       } catch (error) {
         console.error("Error fetching beer:", error);
         Toast.show('Error fetching beer')
@@ -162,35 +169,6 @@ export default function BeerDetails() {
     }
   }, [loading, userRatings]);
 
-  async function fetchUserRating(beerId) {
-    if (!userId) return null;
-
-    const ratingRef = doc(FIRESTORE, 'beers', beerId, 'ratings', userId);
-
-    try {
-      const ratingDoc = await getDoc(ratingRef);
-      return ratingDoc.exists() ? ratingDoc.data() : null;
-    } catch (error) {
-      console.error('Error fetching rating:', error);
-    }
-  }
-
-  const startRating = () => {
-    setAllowRating(true)
-    setRatingType('user')
-  }
-  
-  const cancelRating = () => {
-    setAllowRating(false)
-    setRatingType('global')
-    setUserRatings({
-      overallRating: 0,
-      tasteRating: 0,
-      aromaRating: 0,
-      afterTasteRating: 0,
-    })
-  }
-
   const updateRating = async (category, rating) => {
     setUserRatings(prev => {
       const updatedRatings = { ...prev, [category]: rating };
@@ -198,29 +176,56 @@ export default function BeerDetails() {
       const { aromaRating, tasteRating, afterTasteRating } = updatedRatings;
 
       if (aromaRating && tasteRating && afterTasteRating) {
-        try {
-          const beerRef = doc(FIRESTORE, 'beers', id);
-          const userRatingRef = doc(beerRef, 'ratings', userId);
+        // Calculate the overall rating
+        const overallRating = (aromaRating + tasteRating + afterTasteRating) / 3;
 
-          const overallRating = (aromaRating + tasteRating + afterTasteRating) / 3;
+        // Use async/await in an IIFE (Immediately Invoked Function Expression)
+        (async () => {
+          try {
+            console.log('Updating rating for:', user.id, beer.id);
 
-          setDoc(userRatingRef,
-            { userId, aromaRating, tasteRating, afterTasteRating, overallRating },
-            { merge: true }
-          );
+            // Await the upsert operation
+            const { data, error } = await supabase
+              .from('UserRating')
+              .upsert(
+                [
+                  {
+                    userId: user.id,
+                    beerId: beer.id,
+                    aromaRating: aromaRating,
+                    tasteRating: tasteRating,
+                    afterTasteRating: afterTasteRating,
+                    overallRating: overallRating,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                  }
+                ],
+                {
+                  onConflict: ['userId', 'beerId'],
+                  ignoreDuplicates: false
+                }
+              );
 
-          updatedRatings.overallRating = overallRating;
+            if (error) {
+              console.error('Error updating rating:', error);
+              Toast.show('There was an issue updating your rating.');
+            } else {
+              console.log('Rating saved successfully:', data);
+              Toast.show('Your rating has been updated');
+            }
+          } catch (error) {
+            console.error('Error in upsert operation:', error);
+            Toast.show('There was an issue updating your rating.');
+          }
+        })();
 
-          Toast.show('Your rating has been updated')
-
-        } catch (error) {
-          console.error('Error updating rating:', error);
-          Toast.show('There was an issue updating your rating.')
-        }
+        updatedRatings.overallRating = overallRating;
       }
+
       return updatedRatings;
     });
   };
+
 
   if (loading) {
     return <ActivityIndicator size="large" color="#0000ff" />;

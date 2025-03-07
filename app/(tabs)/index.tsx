@@ -42,10 +42,9 @@ export default function HomeScreen() {
       } else {
         setUser(data?.user);
       }
-      setInitializing(false);  // Stop initializing once we fetch user data
+      setInitializing(false);
     };
 
-    // If initializing, call fetchUser
     if (initializing) {
       fetchUser();
     }
@@ -112,10 +111,9 @@ export default function HomeScreen() {
 
       setBeers(data);
 
-      // Fetch user ratings if user is logged in
-      /* if (user) {
+      if (user) {
         await fetchUserRatings(data);
-      } */
+      }
     } catch (error) {
       console.error('Error fetching beers:', error);
     } finally {
@@ -126,22 +124,38 @@ export default function HomeScreen() {
   const fetchUserRatings = async (beerData) => {
     try {
       const ratings = {};
-      await Promise.all(
-        beerData.map(async (beer) => {
-          try {
-            const ratingRef = doc(FIRESTORE, 'beers', beer.id, 'ratings', user.uid);
-            const ratingDoc = await getDoc(ratingRef);
-            if (ratingDoc.exists()) {
-              ratings[beer.id] = ratingDoc.data()?.overallRating || 0;
+      setLoading(true);
+
+      if (user) {
+        await Promise.all(
+          beerData.map(async (beer) => {
+            try {
+              const { data: userRating, error: userRatingError } = await supabase
+                .from('UserRating')
+                .select('overallRating')
+                .eq('beerId', beer.id)
+                .eq('userId', user.id)
+                .single();
+
+              if (userRatingError) {
+                throw new Error(userRatingError.message);
+              }
+
+              // Store the rating in the ratings object
+              ratings[beer.id] = userRating ? userRating.overall_rating : 0;
+            } catch (err) {
+              console.error(`Error fetching rating for beer ${beer.id}:`, err);
+              // If there's an error for one beer, continue to the next beer
+              ratings[beer.id] = 0;
             }
-          } catch (err) {
-            console.error(`Error fetching rating for beer ${beer.id}:`, err);
-          }
-        })
-      );
+          })
+        );
+      }
       setUserRatings(ratings);
     } catch (error) {
       console.error('Error fetching user ratings:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
