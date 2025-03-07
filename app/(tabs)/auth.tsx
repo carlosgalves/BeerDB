@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
-import { FIREBASE_AUTH } from '../../firebaseConfig';
-import { signInAnonymously, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { supabase } from '../../utils/supabase.config.js';
 import { useRouter } from 'expo-router';
 
 
@@ -31,7 +30,7 @@ export default function AuthScreen() {
                   text: 'Sim, custa',
                   onPress: async () => {
                     try {
-                      await signInAnonymously(FIREBASE_AUTH);
+                      const { data, error } = await supabase.auth.signInAnonymously()
                       router.push('/')
                     } catch (error) {
                       console.error("Erro ao entrar anonimamente:", error);
@@ -56,10 +55,16 @@ export default function AuthScreen() {
     }
     try {
       if (isSigningUp) {
-        await createUserWithEmailAndPassword(FIREBASE_AUTH, email, password);
+        let { data, error } = await supabase.auth.signUp({
+          email: email,
+          password: password
+        })
         Alert.alert('A tua conta foi criada!');
       } else {
-        await signInWithEmailAndPassword(FIREBASE_AUTH, email, password);
+        let { data, error } = await supabase.auth.signInWithPassword({
+          email: email,
+          password: password
+        })
       }
       router.push('/')
     } catch (error) {
