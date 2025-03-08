@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
-import { FIREBASE_AUTH } from '../../firebaseConfig';
-import { signInAnonymously, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { supabase } from '../../utils/supabase.config.js';
 import { useRouter } from 'expo-router';
-
 
 export default function AuthScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSigningUp, setIsSigningUp] = useState(false);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleAnonymousSignIn = () => {
@@ -30,12 +29,16 @@ export default function AuthScreen() {
                 {
                   text: 'Sim, custa',
                   onPress: async () => {
+                    setLoading(true);
                     try {
-                      await signInAnonymously(FIREBASE_AUTH);
-                      router.push('/')
+                      const { data, error } = await supabase.auth.signInAnonymously();
+                      if (error) throw error;
+                      router.push('/');
                     } catch (error) {
                       console.error("Erro ao entrar anonimamente:", error);
-                      Alert.alert('Erro ao entrar anonimamente');
+                      Alert.alert('Erro', error.message || 'Erro ao entrar anonimamente');
+                    } finally {
+                      setLoading(false);
                     }
                   },
                 },
@@ -54,16 +57,31 @@ export default function AuthScreen() {
       Alert.alert('Identifique-se!');
       return;
     }
+
+    setLoading(true);
     try {
       if (isSigningUp) {
-        await createUserWithEmailAndPassword(FIREBASE_AUTH, email, password);
+        const { data, error } = await supabase.auth.signUp({
+          email: email,
+          password: password
+        });
+
+        if (error) throw error;
         Alert.alert('A tua conta foi criada!');
       } else {
-        await signInWithEmailAndPassword(FIREBASE_AUTH, email, password);
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email,
+          password: password
+        });
+
+        if (error) throw error;
       }
-      router.push('/')
+      router.push('/');
     } catch (error) {
-      Alert.alert('Erro ao entrar com email', getErrorMessage(error));
+      console.error("Erro ao entrar com email:", error);
+      Alert.alert('Erro', error.message || 'Erro ao entrar com email');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -87,7 +105,11 @@ export default function AuthScreen() {
         secureTextEntry
       />
 
-      <Button title={isSigningUp ? "Registar" : "Entrar"} onPress={handleEmailSignIn} />
+      <Button
+        title={isSigningUp ? "Registar" : "Entrar"}
+        onPress={handleEmailSignIn}
+        disabled={loading}
+      />
 
       <Text style={styles.switchText}>
         {isSigningUp ? "Já tens uma conta? " : "Ainda não tens uma conta? "}
@@ -98,7 +120,11 @@ export default function AuthScreen() {
 
       <Text style={styles.orText}>ou</Text>
 
-      <Button title="Continuar como convidado" onPress={handleAnonymousSignIn} />
+      <Button
+        title="Continuar como convidado"
+        onPress={handleAnonymousSignIn}
+        disabled={loading}
+      />
     </View>
   );
 }

@@ -12,23 +12,34 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
-import { FIREBASE_AUTH } from '../../firebaseConfig';
-import { onAuthStateChanged } from "firebase/auth";
-import Constants from "expo-constants";
+import { supabase } from '../../utils/supabase.config';
+import Constants from 'expo-constants';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 
-
 const UserProfileScreen = () => {
-  const [user, setUser] = useState(FIREBASE_AUTH.currentUser);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(FIREBASE_AUTH, (updatedUser) => {
-      setUser(updatedUser);
+    const fetchUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error('Error fetching user:', error);
+      } else {
+        setUser(data?.user);
+      }
       setLoading(false);
+    };
+
+    fetchUser();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
     });
 
-    return () => unsubscribe();
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   if (loading) {
@@ -37,7 +48,8 @@ const UserProfileScreen = () => {
 
   const handleSignOut = async () => {
     try {
-      await FIREBASE_AUTH.signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
     } catch (error) {
       console.error("Error signing out:", error);
     }
@@ -45,12 +57,12 @@ const UserProfileScreen = () => {
 
   return (
     <View style={styles.container}>
-      {user?.photoURL ? (
-        <Image source={{ uri: user.photoURL }} style={styles.profileImage} />
+      {user?.user_metadata?.avatar_url ? (
+        <Image source={{ uri: user.user_metadata.avatar_url }} style={styles.profileImage} />
       ) : (
         <View style={styles.placeholderImage} />
       )}
-      <Text style={styles.name}>{user?.displayName || "Anonymous"}</Text>
+      <Text style={styles.name}>{user?.user_metadata?.display_name || "Anonymous"}</Text>
       <Text style={styles.email}>{user?.email || "No email linked"}</Text>
 
       {__DEV__ && (
@@ -58,34 +70,32 @@ const UserProfileScreen = () => {
           <Text style={styles.debug}>DEBUG</Text>
 
           <Text style={styles.infoLabel}>User ID:</Text>
-          <Text style={styles.infoText}>{user?.uid}</Text>
+          <Text style={styles.infoText}>{user?.id}</Text>
 
           <Text style={styles.infoLabel}>Email Verified:</Text>
-          <Text style={styles.infoText}>{user?.emailVerified ? "Yes ✅" : "No ❌"}</Text>
+          <Text style={styles.infoText}>{user?.email_confirmed_at ? 'Yes ✅' : 'No ❌'}</Text>
 
-          {user?.phoneNumber && (
+          {user?.phone && (
             <>
               <Text style={styles.infoLabel}>Phone Number:</Text>
-              <Text style={styles.infoText}>{user.phoneNumber}</Text>
+              <Text style={styles.infoText}>{user.phone}</Text>
             </>
           )}
 
-          {!user?.isAnonymous ? (
+          {!user?.app_metadata?.provider ? (
+            <Text style={styles.infoLabel}> ⚠️ Guest User</Text>
+          ) : (
             <>
               <Text style={styles.infoLabel}>Sign-in Provider:</Text>
-              <Text style={styles.infoText}>{user?.providerData[0]?.providerId}</Text>
-            </>
-            ) : (
-            <>
-              <Text style={styles.infoLabel}> ⚠️ Guest User</Text>
+              <Text style={styles.infoText}>{user?.app_metadata.provider}</Text>
             </>
           )}
 
           <Text style={styles.infoLabel}>Last Login:</Text>
-          <Text style={styles.infoText}>{user?.metadata?.lastSignInTime}</Text>
+          <Text style={styles.infoText}>{user?.last_sign_in_at}</Text>
 
           <Text style={styles.infoLabel}>Account Created:</Text>
-          <Text style={styles.infoText}>{user?.metadata?.creationTime}</Text>
+          <Text style={styles.infoText}>{user?.created_at}</Text>
         </View>
       )}
 
@@ -97,7 +107,6 @@ const UserProfileScreen = () => {
       <View style={styles.versionContainer}>
         <Text style={styles.appVersion}>App Version: {Constants.expoConfig?.version} (build {Constants.expoConfig?.extra?.buildNumber})</Text>
       </View>
-
     </View>
   );
 };

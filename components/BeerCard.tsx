@@ -30,7 +30,11 @@ class BeerCard extends PureComponent<BeerCardProps> {
         />
         <View style={styles.flagContainer}>
           <Image
-            source={flagImages[countryIso] || flagImages[""]}
+            source={
+                countryIso
+                  ? { uri: `https://dkawnlfcrjkdsivajojq.supabase.co/storage/v1/object/public/flags/${countryIso}.png` }
+                  : require('../assets/images/placeholders/unknown-flag.png')
+              }
             style={styles.flagImage}
           />
         </View>
@@ -38,8 +42,8 @@ class BeerCard extends PureComponent<BeerCardProps> {
           <Image
             source={
               image
-                ? { uri: `data:image/png;base64,${image}` }
-                : require('../assets/images/beer/unknown.png')
+                ? { uri: `https://dkawnlfcrjkdsivajojq.supabase.co/storage/v1/object/public/beer-images/${image}` }
+                : require('../assets/images/placeholders/unknown-beer.png')
             }
             style={styles.image}
             resizeMode="contain"

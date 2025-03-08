@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image, Button, TouchableOpacity } from 'react-native';
 import Toast from '@/components/ToastAndroid';
 import { useLocalSearchParams, Stack, useNavigation } from 'expo-router';
+import { supabase } from '../../../utils/supabase.config.js';
 import { FIRESTORE, FIREBASE_AUTH } from '../../../firebaseConfig';
-import { doc, getDoc, updateDoc, collection, setDoc } from 'firebase/firestore';
-import { flagImages, beerImages} from '../../../data/mappers/imageMapper'
-import SwitchSelector from 'react-native-switch-selector'
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { flagImages, beerImages } from '../../../data/mappers/imageMapper'
+import SwitchSelector from 'react-native-switch-selector';
 import { Ionicons } from '@expo/vector-icons';
 import { Rating } from 'react-native-ratings';
 import { getAuth } from 'firebase/auth';
@@ -14,11 +15,11 @@ import { getAuth } from 'firebase/auth';
 export default function BeerDetails() {
   const { id } = useLocalSearchParams()
   const navigation = useNavigation()
-  const user = getAuth().currentUser
-  const userId = user.uid
-  const isUserAnonymous = user.isAnonymous
+  const [user, setUser] = useState(null);
+  const userId = user?.id;
+  const isUserAnonymous = !user?.app_metadata?.provider
   const [loading, setLoading] = useState(true)
-  const [beer, setBeer] = useState()
+  const [beer, setBeer] = useState(null)
   const [userRatings, setUserRatings] = useState({
     overallRating: 0,
     tasteRating: 0,
@@ -27,51 +28,134 @@ export default function BeerDetails() {
   })
   const [allowRating, setAllowRating] = useState(false)
   const [ratingType, setRatingType] = useState('global')
-
+  const [countryName, setCountryName] = useState('');
+  const [breweryName, setBreweryName] = useState('');
+  const [beerType, setBeerType] = useState('');
 
   useEffect(() => {
-    setLoading(true)
+    const fetchUser = async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error('Error fetching user:', error);
+      } else {
+        setUser(user);
+      }
+      setLoading(false);
+    };
 
-    async function fetchBeerData() {
-      setUserRatings({
-        overallRating: 0,
-        tasteRating: 0,
-        aromaRating: 0,
-        afterTasteRating: 0,
-      });
+    fetchUser();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  // Fetch beer details from Supabase
+  useEffect(() => {
+    const fetchBeerData = async () => {
+      setLoading(true);
       try {
-        const beerRef = doc(FIRESTORE, 'beers', id);
-        const beerDoc = await getDoc(beerRef);
+        // Fetch beer data
+        const { data: beerData, error: beerError } = await supabase
+          .from('Beer')
+          .select()
+          .eq('id', id)
+          .single();
 
-        if (beerDoc.exists()) {
-          const beer = { id: beerDoc.id, ...beerDoc.data() };
-          setBeer(beer);
-
-          const userRatingRef = doc(beerRef, 'ratings', userId);
-          const userRatingDoc = await getDoc(userRatingRef);
-
-          if (userRatingDoc.exists()) {
-            const { tasteRating = 0, aromaRating = 0, afterTasteRating = 0, overallRating = 0 } = userRatingDoc.data();
-            setUserRatings({ tasteRating, aromaRating, afterTasteRating, overallRating });
-          }
-        } else {
-          setUserRatings({
-            overallRating: 0,
-            tasteRating: 0,
-            aromaRating: 0,
-            afterTasteRating: 0,
-          });
-          console.log('No such beer!');
+        if (beerError || !beerData) {
+          console.error('Error fetching beer:', beerError);
+          Toast.show('Error fetching beer');
+          setBeer(null);
+          return;
         }
+
+        setBeer(beerData);
+
+        // Fetch country name
+        const { data: countryData, error: countryError } = await supabase
+          .from('Country')
+          .select('name')
+          .eq('iso', beerData.countryIso)
+          .single();
+
+        if (!countryError && countryData) {
+          setCountryName(countryData.name);
+        } else {
+          console.error('Error fetching country:', countryError);
+        }
+
+        // Fetch brewery name
+        const { data: breweryData, error: breweryError } = await supabase
+          .from('Brewery')
+          .select('name')
+          .eq('id', beerData.breweryId)
+          .single();
+
+        if (!breweryError && breweryData) {
+          setBreweryName(breweryData.name);
+        } else {
+          console.error('Error fetching brewery:', breweryError);
+        }
+
+        // Fetch beer type
+        const { data: beerType, error: beerTypeError } = await supabase
+          .from('BeerType')
+          .select('name')
+          .eq('name', beerData.type)
+          .single();
+
+        if (!beerTypeError && beerType) {
+          setBeerType(beerType.name);
+        } else {
+          console.error('Error fetching beer type:', beerTypeError);
+        }
+
+        // Fetch user's rating for this beer if user is logged in
+        if (user) {
+          const { data: userRatingData, error: userRatingError } = await supabase
+            .from('UserRating')
+            .select('*')
+            .eq('userId', user.id)
+            .eq('beerId', id)
+            .single();
+
+          if (!userRatingError && userRatingData) {
+            // User has rated this beer before
+            setUserRatings({
+              overallRating: userRatingData.overallRating || 0,
+              aromaRating: userRatingData.aromaRating || 0,
+              tasteRating: userRatingData.tasteRating || 0,
+              afterTasteRating: userRatingData.afterTasteRating || 0,
+            });
+            setAllowRating(false);  // Disable further rating
+            setRatingType('user');
+          } else {
+            // User hasn't rated this beer, allow them to rate
+            setUserRatings({
+              overallRating: 0,
+              tasteRating: 0,
+              aromaRating: 0,
+              afterTasteRating: 0,
+            });
+            setAllowRating(true);
+            setRatingType('global');
+          }
+        }
+
       } catch (error) {
         console.error("Error fetching beer:", error);
-        Toast.show('Error fetching beer')
+        Toast.show('Error fetching beer');
       } finally {
         setLoading(false);
       }
-    }
+    };
+
     fetchBeerData();
-  }, [id]);
+  }, [id, user]);
 
   useEffect(() => {
     if (loading) return;
@@ -85,35 +169,6 @@ export default function BeerDetails() {
     }
   }, [loading, userRatings]);
 
-  async function fetchUserRating(beerId) {
-    if (!userId) return null;
-
-    const ratingRef = doc(FIRESTORE, 'beers', beerId, 'ratings', userId);
-
-    try {
-      const ratingDoc = await getDoc(ratingRef);
-      return ratingDoc.exists() ? ratingDoc.data() : null;
-    } catch (error) {
-      console.error('Error fetching rating:', error);
-    }
-  }
-
-  const startRating = () => {
-    setAllowRating(true)
-    setRatingType('user')
-  }
-  
-  const cancelRating = () => {
-    setAllowRating(false)
-    setRatingType('global')
-    setUserRatings({
-      overallRating: 0,
-      tasteRating: 0,
-      aromaRating: 0,
-      afterTasteRating: 0,
-    })
-  }
-
   const updateRating = async (category, rating) => {
     setUserRatings(prev => {
       const updatedRatings = { ...prev, [category]: rating };
@@ -121,29 +176,54 @@ export default function BeerDetails() {
       const { aromaRating, tasteRating, afterTasteRating } = updatedRatings;
 
       if (aromaRating && tasteRating && afterTasteRating) {
-        try {
-          const beerRef = doc(FIRESTORE, 'beers', id);
-          const userRatingRef = doc(beerRef, 'ratings', userId);
+        // Calculate the overall rating
+        const overallRating = (aromaRating + tasteRating + afterTasteRating) / 3;
 
-          const overallRating = (aromaRating + tasteRating + afterTasteRating) / 3;
+        // Use async/await in an IIFE (Immediately Invoked Function Expression)
+        (async () => {
+          try {
+            console.log('Updating rating for:', user.id, beer.id);
 
-          setDoc(userRatingRef,
-            { userId, aromaRating, tasteRating, afterTasteRating, overallRating },
-            { merge: true }
-          );
+            // Await the upsert operation
+            const { data, error } = await supabase
+              .from('UserRating')
+              .upsert(
+                [
+                  {
+                    userId: user.id,
+                    beerId: beer.id,
+                    aromaRating: aromaRating,
+                    tasteRating: tasteRating,
+                    afterTasteRating: afterTasteRating,
+                    overallRating: overallRating,
+                  }
+                ],
+                {
+                  onConflict: ['userId', 'beerId'],
+                  ignoreDuplicates: false
+                }
+              );
 
-          updatedRatings.overallRating = overallRating;
+            if (error) {
+              console.error('Error updating rating:', error);
+              Toast.show('There was an issue updating your rating.');
+            } else {
+              console.log('Rating saved successfully:', data);
+              Toast.show('Your rating has been updated');
+            }
+          } catch (error) {
+            console.error('Error in upsert operation:', error);
+            Toast.show('There was an issue updating your rating.');
+          }
+        })();
 
-          Toast.show('Your rating has been updated')
-
-        } catch (error) {
-          console.error('Error updating rating:', error);
-          Toast.show('There was an issue updating your rating.')
-        }
+        updatedRatings.overallRating = overallRating;
       }
+
       return updatedRatings;
     });
   };
+
 
   if (loading) {
     return <ActivityIndicator size="large" color="#0000ff" />;
@@ -158,7 +238,7 @@ export default function BeerDetails() {
   }
 
   const {
-    name, brewery, country, countryIso, type, description, abv, tags, image,
+    name, brewery, countryIso, type, description, abv, tags, image,
     overallRating, aromaRating, tasteRating, afterTasteRating
   } = beer;
 
@@ -179,13 +259,13 @@ export default function BeerDetails() {
       }}
     />
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.subtitle}>Brewery: {brewery || 'Unknown'}</Text>
+      <Text style={styles.subtitle}>Brewery: {breweryName || 'Unknown'}</Text>
       <View style={styles.coverContainer}>
         <Image
           source={
             image
-              ? { uri: `data:image/png;base64,${image}` }
-              : require('../../../assets/images/beer/unknown.png')
+              ? { uri: `https://dkawnlfcrjkdsivajojq.supabase.co/storage/v1/object/public/beer-images/${image}` }
+              : require('../../../assets/images/placeholders/unknown-beer.png')
           }
           style={styles.image}
           resizeMode="contain"
@@ -193,12 +273,16 @@ export default function BeerDetails() {
       </View>
       <View style={styles.flagContainer}>
         <Image
-          source={flagImages[countryIso] || flagImages[""]}
+          source={
+            countryIso
+              ? { uri: `https://dkawnlfcrjkdsivajojq.supabase.co/storage/v1/object/public/flags/${countryIso}.png` }
+              : require('../../../assets/images/placeholders/unknown-flag.png')
+          }
           style={styles.flagImage}
         />
       </View>
-      <Text style={styles.country}>Country: {country}</Text>
-      <Text style={styles.type}>Type: {type}</Text>
+      <Text style={styles.country}>Country: {countryName}</Text>
+      <Text style={styles.type}>Type: {beerType}</Text>
       <Text style={styles.description}>Description: {description}</Text>
       <Text style={styles.alcohol}>ABV: {abv}%</Text>
       <Text style={styles.tags}>Tags: {tags?.join(', ')}</Text>
