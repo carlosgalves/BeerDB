@@ -103,11 +103,20 @@ export default function HomeScreen() {
   const fetchBeers = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.from('Beer').select('*');
+      let { data, error } = await supabase.from('Beer').select('*');
 
       if (error) {
         throw error;
       }
+
+      // Add brewery names
+      data = await Promise.all(data.map(async (beer) => {
+        const brewery = breweries.find(brew => brew.id === beer.breweryId);
+        return {
+          ...beer,
+          brewery: brewery ? brewery.name : 'Unknown Brewery',
+        };
+      }));
 
       setBeers(data);
 
