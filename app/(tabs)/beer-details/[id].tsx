@@ -298,7 +298,7 @@ export default function BeerDetails() {
         imageSize={50}
         ratingCount={5}
         minValue={0}
-        startingValue={userRatings.overallRating}
+        startingValue={ratingType==='user' ? userRatings.overallRating : overallRating}
         jumpValue={0.5}
         fractions={2}
         style={{ paddingVertical: 10 }}

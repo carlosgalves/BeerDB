@@ -150,6 +150,11 @@ export default function HomeScreen() {
                 throw new Error(userRatingError.message);
               }
 
+              // Check if rating exists
+              if (userRating && userRating.overallRating !== null) {
+                ratings[beer.id] = userRating.overallRating;
+              }
+
               // Store the rating in the ratings object
               ratings[beer.id] = userRating ? userRating.overall_rating : 0;
             } catch (err) {
@@ -383,7 +388,7 @@ export default function HomeScreen() {
             <Pressable>
               <BeerCard
                 {...beer}
-                overallRating={userRatings[beer.id] || beer.overallRating || 0}
+                overallRating={userRatings[beer.id] || beer.overallRating}
               />
             </Pressable>
           </Link>
