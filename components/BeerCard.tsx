@@ -12,13 +12,19 @@ interface BeerCardProps {
   country: string;
   countryIso: string;
   image: string;
-  overallRating: number;
+  userRating: number;
+  globalRating: number;
 }
 
 
 class BeerCard extends PureComponent<BeerCardProps> {
   render() {
-    const {name, brewery, country, countryIso, image, overallRating } = this.props;
+    const { name, brewery, countryIso, image, userRating, globalRating } = this.props;
+
+    // Determine which rating to show
+    const isUserRatingAvailable = userRating !== undefined && userRating !== null;
+    const ratingValue = isUserRatingAvailable ? userRating : globalRating ?? 0;
+    const ratingColor = isUserRatingAvailable ? '#f4ce0c' : '#ccba61'; // Blue for user, Red for global
 
     return (
       <Card style={styles.card}>
@@ -31,10 +37,10 @@ class BeerCard extends PureComponent<BeerCardProps> {
         <View style={styles.flagContainer}>
           <Image
             source={
-                countryIso
-                  ? { uri: `https://dkawnlfcrjkdsivajojq.supabase.co/storage/v1/object/public/flags/${countryIso}.png` }
-                  : require('../assets/images/placeholders/unknown-flag.png')
-              }
+              countryIso
+                ? { uri: `https://dkawnlfcrjkdsivajojq.supabase.co/storage/v1/object/public/flags/${countryIso}.png` }
+                : require('../assets/images/placeholders/unknown-flag.png')
+            }
             style={styles.flagImage}
           />
         </View>
@@ -53,14 +59,18 @@ class BeerCard extends PureComponent<BeerCardProps> {
           <View style={styles.ratingContainer}>
             <Rating
               readonly
-              type="star"
+              type="custom"
+              ratingColor={ratingColor}
+              ratingBackgroundColor='#c8c7c8'
               imageSize={30}
               ratingCount={5}
               fractions={2}
-              startingValue={overallRating}
+              startingValue={ratingValue}
               tintColor={styles.card.backgroundColor}
             />
-            <Text style={styles.ratingText}>({overallRating ? overallRating.toFixed(1) : 'N/A'})</Text>
+            <Text style={styles.ratingText}>
+              ({globalRating ? globalRating.toFixed(1) : 'N/A'})
+            </Text>
           </View>
         </Card.Content>
       </Card>

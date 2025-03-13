@@ -294,7 +294,8 @@ export default function BeerDetails() {
 
       <Rating
         readonly
-        type="star"
+        type="custom"
+        ratingColor={"#f4ce0c"}
         imageSize={50}
         ratingCount={5}
         minValue={0}
@@ -373,7 +374,8 @@ export default function BeerDetails() {
         </Text>
         <Rating
           readonly={!allowRating || ratingType == 'global'}
-          type="star"
+          type="custom"
+          ratingColor={"#f4ce0c"}
           imageSize={35}
           ratingCount={5}
           minValue={0}
@@ -390,7 +392,8 @@ export default function BeerDetails() {
         </Text>
         <Rating
           readonly={!allowRating || ratingType == 'global'}
-          type="star"
+          type="custom"
+          ratingColor={"#f4ce0c"}
           imageSize={35}
           ratingCount={5}
           minValue={0}
@@ -407,7 +410,8 @@ export default function BeerDetails() {
         </Text>
         <Rating
           readonly={!allowRating || ratingType == 'global'}
-          type="star"
+          type="custom"
+          ratingColor={"#f4ce0c"}
           imageSize={35}
           ratingCount={5}
           minValue={0}

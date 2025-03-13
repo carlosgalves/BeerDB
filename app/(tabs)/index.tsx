@@ -24,7 +24,8 @@ export default function HomeScreen() {
   const [beers, setBeers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [userRatings, setUserRatings] = useState<{ [key: string]: number }>({});
-  const [sortOption, setSortOption] = useState<'Name A-Z' | 'Name Z-A' | 'Country A-Z' | 'Country Z-A' | 'Rating Ascending' | 'Rating Descending'>('Rating Descending');
+  const [globalRatings, setGlobalRatings] = useState([]);
+  const [sortOption, setSortOption] = useState<'Name A-Z' | 'Name Z-A' | 'Country A-Z' | 'Country Z-A' | 'Rating Ascending' | 'Rating Descending' | 'Global Rating Ascending' | 'Global Rating Descending'>('Global Rating Descending');
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [countries, setCountries] = useState([]);
   const [breweries, setBreweries] = useState([]);
@@ -120,11 +121,46 @@ export default function HomeScreen() {
 
       setBeers(data);
 
+      fetchGlobalRatings(data);
+
       if (user) {
         await fetchUserRatings(data);
       }
     } catch (error) {
       console.error('Error fetching beers:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchGlobalRatings = async (beerData) => {
+    try {
+      const ratings = {};
+      setLoading(true);
+
+      await Promise.all(
+        beerData.map(async (beer) => {
+          try {
+            const { data: globalRating, error: globalRatingError } = await supabase
+              .from('Beer')
+              .select('overallRating')
+              .eq('id', beer.id)
+              .single();
+
+            if (globalRatingError) {
+              throw new Error(globalRatingError.message);
+            }
+
+            ratings[beer.id] = beer.overallRating;
+          } catch (err) {
+            console.error(`Error fetching rating for beer ${beer.id}:`, err);
+            ratings[beer.id] = 0;
+          }
+        })
+      );
+      setGlobalRatings(ratings);
+    } catch (error) {
+      console.error('Error fetching global ratings:', error);
     } finally {
       setLoading(false);
     }
@@ -150,13 +186,11 @@ export default function HomeScreen() {
                 throw new Error(userRatingError.message);
               }
 
-              // Check if rating exists
+              // Check if user rating exists
               if (userRating && userRating.overallRating !== null) {
                 ratings[beer.id] = userRating.overallRating;
               }
-
-              // Store the rating in the ratings object
-              ratings[beer.id] = userRating ? userRating.overall_rating : 0;
+              ratings[beer.id] = userRating ? userRating.overallRating : 0;
             } catch (err) {
               console.error(`Error fetching rating for beer ${beer.id}:`, err);
               // If there's an error for one beer, continue to the next beer
@@ -272,6 +306,16 @@ export default function HomeScreen() {
           ((userRatings[b.id] || b.overallRating || 0) - (userRatings[a.id] || a.overallRating || 0))
         );
         break;
+      case 'Global Rating Ascending':
+        filtered.sort((a, b) =>
+          ((globalRatings[a.id] || a.overallRating || 0) - (globalRatings[b.id] || b.overallRating || 0))
+        );
+        break;
+      case 'Global Rating Descending':
+        filtered.sort((a, b) =>
+          ((globalRatings[b.id] || b.overallRating || 0) - (globalRatings[a.id] || a.overallRating || 0))
+        );
+        break;
     }
 
     return filtered;
@@ -314,6 +358,8 @@ export default function HomeScreen() {
         >
           <Picker.Item label="Rating ↓" value="Rating Descending" />
           <Picker.Item label="Rating ↑" value="Rating Ascending" />
+          <Picker.Item label="Global Rating ↓" value="Global Rating Descending" />
+          <Picker.Item label="Global Rating ↑" value="Global Rating Ascending" />
           <Picker.Item label="Name A-Z" value="Name A-Z" />
           <Picker.Item label="Name Z-A" value="Name Z-A" />
           <Picker.Item label="Country A-Z" value="Country A-Z" />
@@ -388,7 +434,8 @@ export default function HomeScreen() {
             <Pressable>
               <BeerCard
                 {...beer}
-                overallRating={userRatings[beer.id] || beer.overallRating}
+                globalRating={globalRatings[beer.id]}
+                userRating={userRatings[beer.id]}
               />
             </Pressable>
           </Link>
