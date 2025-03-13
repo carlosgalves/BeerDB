@@ -180,7 +180,7 @@ export default function HomeScreen() {
                 .select('overallRating')
                 .eq('beerId', beer.id)
                 .eq('userId', user.id)
-                .single();
+                .maybeSingle();
 
               if (userRatingError) {
                 throw new Error(userRatingError.message);
@@ -189,11 +189,11 @@ export default function HomeScreen() {
               // Check if user rating exists
               if (userRating && userRating.overallRating !== null) {
                 ratings[beer.id] = userRating.overallRating;
+              } else {
+                ratings[beer.id] = null;
               }
-              ratings[beer.id] = userRating ? userRating.overallRating : 0;
             } catch (err) {
               console.error(`Error fetching rating for beer ${beer.id}:`, err);
-              // If there's an error for one beer, continue to the next beer
               ratings[beer.id] = 0;
             }
           })
