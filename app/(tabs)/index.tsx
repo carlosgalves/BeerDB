@@ -85,9 +85,7 @@ export default function HomeScreen() {
 
       const { data, error } = await query;
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       if (collectionName === 'Country') {
         setCountries(data);
@@ -106,10 +104,6 @@ export default function HomeScreen() {
     try {
       let { data, error } = await supabase.from('Beer').select('*');
 
-      if (error) {
-        throw error;
-      }
-
       // Add brewery names
       data = await Promise.all(data.map(async (beer) => {
         const brewery = breweries.find(brew => brew.id === beer.breweryId);
@@ -119,13 +113,16 @@ export default function HomeScreen() {
         };
       }));
 
-      setBeers(data);
+      if (error) throw error;
 
       fetchGlobalRatings(data);
 
       if (user) {
         await fetchUserRatings(data);
       }
+
+      setBeers(data);
+
     } catch (error) {
       console.error('Error fetching beers:', error);
     } finally {
@@ -136,7 +133,6 @@ export default function HomeScreen() {
   const fetchGlobalRatings = async (beerData) => {
     try {
       const ratings = {};
-      setLoading(true);
 
       await Promise.all(
         beerData.map(async (beer) => {
@@ -161,15 +157,12 @@ export default function HomeScreen() {
       setGlobalRatings(ratings);
     } catch (error) {
       console.error('Error fetching global ratings:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
   const fetchUserRatings = async (beerData) => {
     try {
       const ratings = {};
-      setLoading(true);
 
       if (user) {
         await Promise.all(
@@ -202,8 +195,6 @@ export default function HomeScreen() {
       setUserRatings(ratings);
     } catch (error) {
       console.error('Error fetching user ratings:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
