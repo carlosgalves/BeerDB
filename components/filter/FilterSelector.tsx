@@ -5,7 +5,7 @@ import {
   Text,
   Pressable,
 } from 'react-native';
-import FilterModal from '../components/FilterModal';
+import FilterModal from '../filter/FilterModal';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const FilterSelector = ({

@@ -15,9 +15,9 @@ import BeerCard from '../../components/BeerCard';
 import { supabase } from '../../utils/supabase.config.js';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import SearchBar from '../../components/SearchBar';
-import FilterSelector from '../../components/FilterSelector';
-import ActiveFilterList from '../../components/ActiveFilterList';
-import SortSelector from '../../components/SortSelector';
+import FilterSelector from '../../components/filter/FilterSelector';
+import ActiveFilterList from '../../components/filter/ActiveFilterList';
+import SortSelector from '../../components/filter/SortSelector';
 
 export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
