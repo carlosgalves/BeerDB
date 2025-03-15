@@ -14,9 +14,11 @@ import { Link, useRouter } from 'expo-router';
 import BeerCard from '../../components/BeerCard';
 import { supabase } from '../../utils/supabase.config.js';
 import { Picker } from '@react-native-picker/picker';
-import FilterModal from '../../components/FilterModal';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import SearchBar from '../../components/SearchBar';
+import FilterSelector from '../../components/FilterSelector';
+import ActiveFilterList from '../../components/ActiveFilterList';
+
 
 export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
@@ -199,40 +201,9 @@ export default function HomeScreen() {
     }
   };
 
-  const openFilterModal = (filterType) => {
-    setActiveFilterType(filterType);
-    setFilterModalVisible(true);
-  };
 
-  const handleApplyFilters = useCallback((filterType, selectedValue) => {
-    setFilters((prevFilters) => {
-      if (!selectedValue) {
-        // Remove filter if no value is selected
-        return prevFilters.filter(filter => filter.type !== filterType);
-      }
 
-      let value = selectedValue;
 
-      if (filterType === 'country') {
-        const countryObject = countries.find(c => c.name === selectedValue);
-        if (countryObject) {
-          value = countryObject.iso;
-        }
-      } else if (filterType === 'brewery') {
-        const breweryObject = breweries.find(b => b.name === selectedValue);
-        if (breweryObject) {
-          value = breweryObject.id;
-        }
-      }
-
-      return [
-        ...prevFilters.filter(filter => filter.type !== filterType),
-        { type: filterType, value, displayValue: selectedValue },
-      ];
-    });
-
-    setFilterModalVisible(false);
-  }, [countries, breweries]);
 
   const handleRemoveFilter = useCallback((filterToRemove) => {
     setFilters((prevFilters) => prevFilters.filter(filter =>
@@ -314,10 +285,7 @@ export default function HomeScreen() {
     return <ActivityIndicator size="large" color="#0000ff" />;
   }
 
-  // display names for dropdown components
-  const countryNames = countries.map(country => country.name);
-  const breweryNames = breweries.map(brewery => brewery.name);
-  const beerTypeNames = beerTypes.map(type => type.name);
+
 
   return (
     <View style={styles.container}>
@@ -340,40 +308,24 @@ export default function HomeScreen() {
           <Picker.Item label="Country Z-A" value="Country Z-A" />
         </Picker>
 
-        <Pressable
-          style={styles.filterButton}
-          onPress={() => openFilterModal()}
-        >
-          <Text style={styles.filterButtonText}>Add Filter</Text>
-        </Pressable>
+        <FilterSelector
+          filters={filters}
+          setFilters={setFilters}
+          filterModalVisible={filterModalVisible}
+          setFilterModalVisible={setFilterModalVisible}
+          countries={countries}
+          breweries={breweries}
+          beerTypes={beerTypes}
+          activeFilterType={activeFilterType}
+          setActiveFilterType={setActiveFilterType}
+        />
+
       </View>
 
-      {filters.length > 0 && (
-        <View style={styles.activeFiltersContainer}>
-          <View style={styles.activeFiltersHeader}>
-            <Text style={styles.activeFiltersTitle}>Active Filters:</Text>
-            <Pressable onPress={clearAllFilters} style={styles.clearAllButton}>
-              <Text style={styles.clearAllText}>Clear All</Text>
-            </Pressable>
-          </View>
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.activeFiltersContent}>
-            {filters.map((filter, index) => (
-              <View key={index} style={styles.activeFilterChip}>
-                <Text style={styles.activeFilterText}>
-                  {filter.type === 'country' ? 'Country: ' :
-                   filter.type === 'brewery' ? 'Brewery: ' :
-                   'Type: '}
-                  {filter.displayValue}
-                </Text>
-                <Pressable onPress={() => handleRemoveFilter(filter)}>
-                  <Icon name="close-circle" size={16} color="#666" />
-                </Pressable>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-      )}
+      <ActiveFilterList
+        filters={filters}
+        setFilters={setFilters}
+      />
 
       {/* Results Count */}
       <View style={styles.resultsContainer}>
@@ -382,16 +334,7 @@ export default function HomeScreen() {
         </Text>
       </View>
 
-      <FilterModal
-        visible={filterModalVisible}
-        onClose={() => setFilterModalVisible(false)}
-        onApplyFilters={handleApplyFilters}
-        countries={countryNames}
-        breweries={breweryNames}
-        beerTypes={beerTypeNames}
-        filters={filters}
-        activeFilterType={activeFilterType}
-      />
+
 
       <FlatList
         data={filteredBeers}
@@ -430,12 +373,7 @@ const styles = StyleSheet.create({
   scrollContainer: {
     padding: 16,
   },
-  filtersRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    marginBottom: 8,
-  },
+
   sortContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -465,56 +403,6 @@ const styles = StyleSheet.create({
   },
   filterButtonsContainer: {
     paddingVertical: 8,
-  },
-  filterButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'blue',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight:20
-  },
-  filterButtonText: {
-    color: 'blue',
-    fontWeight: '500',
-  },
-  activeFiltersContainer: {
-    marginHorizontal: 16,
-    marginBottom: 8,
-  },
-  activeFiltersHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  activeFiltersTitle: {
-    fontSize: 14,
-  },
-  clearAllButton: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-  },
-  clearAllText: {
-    color: 'red',
-    fontSize: 14,
-  },
-  activeFiltersContent: {
-    flexDirection: 'row',
-    paddingBottom: 8,
-  },
-  activeFilterChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-  },
-  activeFilterText: {
-    fontSize: 14,
-    color: 'blue',
-    marginRight: 8,
   },
   resultsContainer: {
     paddingHorizontal: 16,
