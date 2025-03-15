@@ -13,12 +13,11 @@ import {
 import { Link, useRouter } from 'expo-router';
 import BeerCard from '../../components/BeerCard';
 import { supabase } from '../../utils/supabase.config.js';
-import { Picker } from '@react-native-picker/picker';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import SearchBar from '../../components/SearchBar';
 import FilterSelector from '../../components/FilterSelector';
 import ActiveFilterList from '../../components/ActiveFilterList';
-
+import SortSelector from '../../components/SortSelector';
 
 export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
@@ -201,20 +200,6 @@ export default function HomeScreen() {
     }
   };
 
-
-
-
-
-  const handleRemoveFilter = useCallback((filterToRemove) => {
-    setFilters((prevFilters) => prevFilters.filter(filter =>
-      !(filter.type === filterToRemove.type && filter.value === filterToRemove.value)
-    ));
-  }, []);
-
-  const clearAllFilters = () => {
-    setFilters([]);
-  };
-
   const refreshData = async () => {
     setLoading(true);
     await fetchBeers();
@@ -293,20 +278,11 @@ export default function HomeScreen() {
       <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
       <View style={styles.filtersRow}>
-        <Picker
-          selectedValue={sortOption}
-          onValueChange={(value) => setSortOption(value)}
-          style={styles.picker}
-        >
-          <Picker.Item label="Rating ↓" value="Rating Descending" />
-          <Picker.Item label="Rating ↑" value="Rating Ascending" />
-          <Picker.Item label="Global Rating ↓" value="Global Rating Descending" />
-          <Picker.Item label="Global Rating ↑" value="Global Rating Ascending" />
-          <Picker.Item label="Name A-Z" value="Name A-Z" />
-          <Picker.Item label="Name Z-A" value="Name Z-A" />
-          <Picker.Item label="Country A-Z" value="Country A-Z" />
-          <Picker.Item label="Country Z-A" value="Country Z-A" />
-        </Picker>
+
+        <SortSelector
+          sortOption={sortOption}
+          setSortOption={setSortOption}
+        />
 
         <FilterSelector
           filters={filters}
@@ -384,12 +360,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
     flexShrink: 0,
   },
-  picker: {
-    width: '30%',
-    flex: 1,
-    marginRight: 20,
-    color: '#333',
-  },
+
   filtersContainer: {
     marginBottom: 8,
     paddingHorizontal: 16,
