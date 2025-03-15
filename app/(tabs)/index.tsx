@@ -28,12 +28,10 @@ export default function HomeScreen() {
   const [userRatings, setUserRatings] = useState<{ [key: string]: number }>({});
   const [globalRatings, setGlobalRatings] = useState([]);
   const [sortOption, setSortOption] = useState<'Name A-Z' | 'Name Z-A' | 'Country A-Z' | 'Country Z-A' | 'Rating Ascending' | 'Rating Descending' | 'Global Rating Ascending' | 'Global Rating Descending'>('Global Rating Descending');
-  const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [countries, setCountries] = useState([]);
   const [breweries, setBreweries] = useState([]);
   const [beerTypes, setBeerTypes] = useState([]);
   const [filters, setFilters] = useState([]);
-  const [activeFilterType, setActiveFilterType] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -280,20 +278,15 @@ export default function HomeScreen() {
       <View style={styles.filtersRow}>
 
         <SortSelector
-          sortOption={sortOption}
-          setSortOption={setSortOption}
+
         />
 
         <FilterSelector
           filters={filters}
           setFilters={setFilters}
-          filterModalVisible={filterModalVisible}
-          setFilterModalVisible={setFilterModalVisible}
           countries={countries}
           breweries={breweries}
           beerTypes={beerTypes}
-          activeFilterType={activeFilterType}
-          setActiveFilterType={setActiveFilterType}
         />
 
       </View>

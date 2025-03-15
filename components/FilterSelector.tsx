@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -11,14 +11,12 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 const FilterSelector = ({
   filters,
   setFilters,
-  filterModalVisible,
-  setFilterModalVisible,
-  activeFilterType,
-  setActiveFilterType,
   countries,
   breweries,
   beerTypes
 }) => {
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [activeFilterType, setActiveFilterType] = useState(null);
 
   const openFilterModal = (filterType) => {
     setActiveFilterType(filterType);
