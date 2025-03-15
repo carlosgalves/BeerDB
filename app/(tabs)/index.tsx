@@ -16,6 +16,7 @@ import { supabase } from '../../utils/supabase.config.js';
 import { Picker } from '@react-native-picker/picker';
 import FilterModal from '../../components/FilterModal';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import SearchBar from '../../components/SearchBar';
 
 export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
@@ -239,10 +240,6 @@ export default function HomeScreen() {
     ));
   }, []);
 
-  const clearSearch = () => {
-    setSearchQuery('');
-  };
-
   const clearAllFilters = () => {
     setFilters([]);
   };
@@ -324,22 +321,8 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.searchBarContainer}>
-        <View style={styles.searchBarWrapper}>
-          <Icon name="magnify" size={20} color="#ccc" style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchBar}
-            placeholder="Search"
-            value={searchQuery}
-            onChangeText={(text) => setSearchQuery(text)}
-          />
-          {searchQuery ? (
-            <Pressable onPress={clearSearch}>
-              <Icon name="close-circle" size={24} style={styles.clearButton} />
-            </Pressable>
-          ) : null}
-        </View>
-      </View>
+
+      <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
       <View style={styles.filtersRow}>
         <Picker
@@ -446,32 +429,6 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     padding: 16,
-  },
-  searchBarContainer: {
-    alignItems: 'center',
-    padding: 16,
-  },
-  searchBarWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchBar: {
-    flex: 1,
-    height: 40,
-    fontSize: 16,
-  },
-  clearButton: {
-    marginLeft: 10,
-    color: '#ccc',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   filtersRow: {
     flexDirection: 'row',
