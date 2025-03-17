@@ -18,6 +18,7 @@ import FilterModal from '../../components/FilterModal';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import useRealtimeBeerSubscription from '../../hooks/useRealtimeBeerSubscription';
 import useRealtimeUserRatingSubscription from '../../hooks/useRealtimeUserRatingSubscription';
+import useRealtimeBrewerySubscription from '../../hooks/useRealtimeBrewerySubscription';
 
 export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
@@ -46,6 +47,10 @@ export default function HomeScreen() {
   useRealtimeUserRatingSubscription({
     user,
     setUserRatings
+  });
+
+  useRealtimeBrewerySubscription({
+    setBreweries
   });
 
   useEffect(() => {
