@@ -24,7 +24,10 @@ class BeerCard extends PureComponent<BeerCardProps> {
     // Determine which rating to show
     const isUserRatingAvailable = userRating !== undefined && userRating !== null;
     const ratingValue = isUserRatingAvailable ? userRating : globalRating ?? 0;
-    const ratingColor = isUserRatingAvailable ? '#f4ce0c' : '#ccba61'; // Blue for user, Red for global
+    const ratingColor = isUserRatingAvailable ? 'blue' : 'red'; // Blue for user, Red for global
+
+  console.log(isUserRatingAvailable)
+  console.log(userRating)
 
     return (
       <Card style={styles.card}>

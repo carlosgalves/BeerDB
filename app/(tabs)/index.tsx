@@ -16,6 +16,7 @@ import { supabase } from '../../utils/supabase.config.js';
 import { Picker } from '@react-native-picker/picker';
 import FilterModal from '../../components/FilterModal';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import useRealtimeSubscription from '../../hooks/useRealtimeSubscription';
 
 export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
@@ -129,6 +130,26 @@ export default function HomeScreen() {
       setLoading(false);
     }
   };
+
+  useRealtimeSubscription({
+      user,
+      breweries,
+      setBeers,
+      setGlobalRatings,
+      setUserRatings
+    });
+
+/*   const changes = supabase
+    .channel('schema-db-changes')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+      },
+      (payload) => console.log(payload)
+    )
+    .subscribe() */
 
   const fetchGlobalRatings = async (beerData) => {
     try {
