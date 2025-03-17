@@ -69,7 +69,7 @@ return {
       eas: {
         projectId: EAS_PROJECT_ID,
       },
-      buildNumber: "5",
+      buildNumber: "6",
 
     },
     owner: OWNER,
