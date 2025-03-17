@@ -19,6 +19,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import useRealtimeBeerSubscription from '../../hooks/useRealtimeBeerSubscription';
 import useRealtimeUserRatingSubscription from '../../hooks/useRealtimeUserRatingSubscription';
 import useRealtimeBrewerySubscription from '../../hooks/useRealtimeBrewerySubscription';
+import useRealtimeCountrySubscription from '../../hooks/useRealtimeCountrySubscription';
 
 export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
@@ -37,21 +38,13 @@ export default function HomeScreen() {
   const [activeFilterType, setActiveFilterType] = useState(null);
   const router = useRouter();
 
+  useRealtimeBeerSubscription({breweries, setBeers, setGlobalRatings});
 
-  useRealtimeBeerSubscription({
-    breweries,
-    setBeers,
-    setGlobalRatings,
-  });
+  useRealtimeUserRatingSubscription({user, setUserRatings});
 
-  useRealtimeUserRatingSubscription({
-    user,
-    setUserRatings
-  });
+  useRealtimeBrewerySubscription({setBreweries});
 
-  useRealtimeBrewerySubscription({
-    setBreweries
-  });
+  useRealtimeCountrySubscription({setCountries});
 
   useEffect(() => {
     // Fetch user info
