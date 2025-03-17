@@ -3,14 +3,12 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image, Button, T
 import Toast from '@/components/ToastAndroid';
 import { useLocalSearchParams, Stack, useNavigation } from 'expo-router';
 import { supabase } from '../../../utils/supabase.config.js';
-import { FIRESTORE, FIREBASE_AUTH } from '../../../firebaseConfig';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { flagImages, beerImages } from '../../../data/mappers/imageMapper'
 import SwitchSelector from 'react-native-switch-selector';
 import { Ionicons } from '@expo/vector-icons';
 import { Rating } from 'react-native-ratings';
 import { getAuth } from 'firebase/auth';
-
+import useRealtimeUserRatingSubscription from '../../../hooks/useRealtimeUserRatingSubscription';
 
 export default function BeerDetails() {
   const { id } = useLocalSearchParams()
@@ -31,6 +29,8 @@ export default function BeerDetails() {
   const [countryName, setCountryName] = useState('');
   const [breweryName, setBreweryName] = useState('');
   const [beerType, setBeerType] = useState('');
+
+  useRealtimeUserRatingSubscription({user, setUserRatings});
 
   useEffect(() => {
     const fetchUser = async () => {
