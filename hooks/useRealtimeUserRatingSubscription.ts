@@ -7,7 +7,7 @@ export default function useRealtimeUserRatingSubscription({
 }) {
   useEffect(() => {
     const subscription = supabase
-      .channel('schema-db-changes')
+      .channel('user-rating-changes')
       .on(
         'postgres_changes',
         {

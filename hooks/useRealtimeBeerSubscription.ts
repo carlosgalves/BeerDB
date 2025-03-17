@@ -8,7 +8,7 @@ export default function useRealtimeBeerSubscription({
 }) {
   useEffect(() => {
     const subscription = supabase
-      .channel('schema-db-changes')
+      .channel('beer-changes')
       .on(
         'postgres_changes',
         {
