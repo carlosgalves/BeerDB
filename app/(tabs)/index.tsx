@@ -18,6 +18,7 @@ import SearchBar from '../../components/SearchBar';
 import FilterSelector from '../../components/filter/FilterSelector';
 import ActiveFilterList from '../../components/filter/ActiveFilterList';
 import SortSelector from '../../components/filter/SortSelector';
+import LoadingScreen from '../../components/LoadingScreen';
 
 export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
@@ -281,15 +282,8 @@ export default function HomeScreen() {
 
 
   if (loading || initializing) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#0000ff" />
-        <Text style={{ marginTop: 10 }}>A carregar dados...</Text>
-      </View>
-    );
+    return <LoadingScreen />;
   }
-
-
 
   return (
     <View style={styles.container}>
