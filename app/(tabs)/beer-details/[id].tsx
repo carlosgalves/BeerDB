@@ -10,7 +10,7 @@ import SwitchSelector from 'react-native-switch-selector';
 import { Ionicons } from '@expo/vector-icons';
 import { Rating } from 'react-native-ratings';
 import { getAuth } from 'firebase/auth';
-
+import LoadingScreen from '../../../components/LoadingScreen';
 
 export default function BeerDetails() {
   const { id } = useLocalSearchParams()
@@ -226,7 +226,7 @@ export default function BeerDetails() {
 
 
   if (loading) {
-    return <ActivityIndicator size="large" color="#0000ff" />;
+    return <LoadingScreen />;
   }
 
   if (!beer) {

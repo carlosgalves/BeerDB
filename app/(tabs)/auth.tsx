@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { supabase } from '../../utils/supabase.config.js';
 import { useRouter } from 'expo-router';
+import LoadingScreen from '../../components/LoadingScreen';
 
 export default function AuthScreen() {
   const [email, setEmail] = useState('');
@@ -84,6 +85,10 @@ export default function AuthScreen() {
       setLoading(false);
     }
   };
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <View style={styles.container}>
