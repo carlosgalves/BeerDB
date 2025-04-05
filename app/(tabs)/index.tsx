@@ -65,11 +65,30 @@ export default function HomeScreen() {
   }, [initializing]);
 
   useEffect(() => {
-    fetchData('Country');
-    fetchData('Brewery');
-    fetchData('BeerType');
-    fetchBeers();
+    const loadAllData = async () => {
+      setLoading(true);
+      try {
+        const [countriesData, breweriesData, beerTypesData] = await Promise.all([
+          supabase.from('Country').select('name, iso'),
+          supabase.from('Brewery').select('id, name'),
+          supabase.from('BeerType').select('name'),
+        ]);
+
+        setCountries(countriesData.data || []);
+        setBreweries(breweriesData.data || []);
+        setBeerTypes(beerTypesData.data || []);
+
+        await fetchBeers(breweriesData.data || []);
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAllData();
   }, []);
+
 
   const fetchData = async (collectionName) => {
     try {
@@ -99,14 +118,12 @@ export default function HomeScreen() {
     }
   };
 
-  const fetchBeers = async () => {
-    setLoading(true);
+  const fetchBeers = async (breweriesList) => {
     try {
       let { data, error } = await supabase.from('Beer').select('*');
 
-      // Add brewery names
       data = await Promise.all(data.map(async (beer) => {
-        const brewery = breweries.find(brew => brew.id === beer.breweryId);
+        const brewery = breweriesList.find(brew => brew.id === beer.breweryId);
         return {
           ...beer,
           brewery: brewery ? brewery.name : 'Unknown Brewery',
@@ -122,13 +139,11 @@ export default function HomeScreen() {
       }
 
       setBeers(data);
-
     } catch (error) {
       console.error('Error fetching beers:', error);
-    } finally {
-      setLoading(false);
     }
   };
+
 
   const fetchGlobalRatings = async (beerData) => {
     try {
@@ -193,6 +208,7 @@ export default function HomeScreen() {
         );
       }
       setUserRatings(ratings);
+      console.log(ratings)
     } catch (error) {
       console.error('Error fetching user ratings:', error);
     }
@@ -265,7 +281,12 @@ export default function HomeScreen() {
 
 
   if (loading || initializing) {
-    return <ActivityIndicator size="large" color="#0000ff" />;
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#0000ff" />
+        <Text style={{ marginTop: 10 }}>A carregar dados...</Text>
+      </View>
+    );
   }
 
 
@@ -277,9 +298,7 @@ export default function HomeScreen() {
 
       <View style={styles.filtersRow}>
 
-        <SortSelector
-
-        />
+        <SortSelector/>
 
         <FilterSelector
           filters={filters}
