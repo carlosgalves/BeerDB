@@ -106,7 +106,7 @@ const UserProfileScreen = () => {
       </TouchableOpacity>
 
       <View style={styles.versionContainer}>
-        <Text style={styles.appVersion}>App Version: {Constants.expoConfig?.version} (build {Constants.expoConfig?.extra?.buildNumber})</Text>
+        <Text style={styles.appVersion}>App Version: {Constants.expoConfig?.version}</Text>
       </View>
     </View>
   );
