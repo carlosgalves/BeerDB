@@ -3,14 +3,13 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image, Button, T
 import Toast from '@/components/ToastAndroid';
 import { useLocalSearchParams, Stack, useNavigation } from 'expo-router';
 import { supabase } from '../../../utils/supabase.config.js';
-import { FIRESTORE, FIREBASE_AUTH } from '../../../firebaseConfig';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { flagImages, beerImages } from '../../../data/mappers/imageMapper'
 import SwitchSelector from 'react-native-switch-selector';
 import { Ionicons } from '@expo/vector-icons';
 import { Rating } from 'react-native-ratings';
 import { getAuth } from 'firebase/auth';
-
+import useRealtimeUserRatingSubscription from '../../../hooks/useRealtimeUserRatingSubscription';
+import LoadingScreen from '../../../components/LoadingScreen';
 
 export default function BeerDetails() {
   const { id } = useLocalSearchParams()
@@ -31,6 +30,8 @@ export default function BeerDetails() {
   const [countryName, setCountryName] = useState('');
   const [breweryName, setBreweryName] = useState('');
   const [beerType, setBeerType] = useState('');
+
+  useRealtimeUserRatingSubscription({user, setUserRatings});
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -226,7 +227,7 @@ export default function BeerDetails() {
 
 
   if (loading) {
-    return <ActivityIndicator size="large" color="#0000ff" />;
+    return <LoadingScreen />;
   }
 
   if (!beer) {
@@ -294,11 +295,12 @@ export default function BeerDetails() {
 
       <Rating
         readonly
-        type="star"
+        type="custom"
+        ratingColor={"#f4ce0c"}
         imageSize={50}
         ratingCount={5}
         minValue={0}
-        startingValue={userRatings.overallRating}
+        startingValue={ratingType==='user' ? userRatings.overallRating : overallRating}
         jumpValue={0.5}
         fractions={2}
         style={{ paddingVertical: 10 }}
@@ -373,7 +375,8 @@ export default function BeerDetails() {
         </Text>
         <Rating
           readonly={!allowRating || ratingType == 'global'}
-          type="star"
+          type="custom"
+          ratingColor={"#f4ce0c"}
           imageSize={35}
           ratingCount={5}
           minValue={0}
@@ -390,7 +393,8 @@ export default function BeerDetails() {
         </Text>
         <Rating
           readonly={!allowRating || ratingType == 'global'}
-          type="star"
+          type="custom"
+          ratingColor={"#f4ce0c"}
           imageSize={35}
           ratingCount={5}
           minValue={0}
@@ -407,7 +411,8 @@ export default function BeerDetails() {
         </Text>
         <Rating
           readonly={!allowRating || ratingType == 'global'}
-          type="star"
+          type="custom"
+          ratingColor={"#f4ce0c"}
           imageSize={35}
           ratingCount={5}
           minValue={0}

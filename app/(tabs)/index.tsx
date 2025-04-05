@@ -13,9 +13,16 @@ import {
 import { Link, useRouter } from 'expo-router';
 import BeerCard from '../../components/BeerCard';
 import { supabase } from '../../utils/supabase.config.js';
-import { Picker } from '@react-native-picker/picker';
-import FilterModal from '../../components/FilterModal';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import useRealtimeBeerSubscription from '../../hooks/useRealtimeBeerSubscription';
+import useRealtimeUserRatingSubscription from '../../hooks/useRealtimeUserRatingSubscription';
+import useRealtimeBrewerySubscription from '../../hooks/useRealtimeBrewerySubscription';
+import useRealtimeCountrySubscription from '../../hooks/useRealtimeCountrySubscription';
+import SearchBar from '../../components/SearchBar';
+import FilterSelector from '../../components/filter/FilterSelector';
+import ActiveFilterList from '../../components/filter/ActiveFilterList';
+import SortSelector from '../../components/filter/SortSelector';
+import LoadingScreen from '../../components/LoadingScreen';
 
 export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
@@ -24,14 +31,21 @@ export default function HomeScreen() {
   const [beers, setBeers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [userRatings, setUserRatings] = useState<{ [key: string]: number }>({});
-  const [sortOption, setSortOption] = useState<'Name A-Z' | 'Name Z-A' | 'Country A-Z' | 'Country Z-A' | 'Rating Ascending' | 'Rating Descending'>('Rating Descending');
-  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [globalRatings, setGlobalRatings] = useState([]);
+  const [sortOption, setSortOption] = useState<'Name A-Z' | 'Name Z-A' | 'Country A-Z' | 'Country Z-A' | 'Rating Ascending' | 'Rating Descending' | 'Global Rating Ascending' | 'Global Rating Descending'>('Global Rating Descending');
   const [countries, setCountries] = useState([]);
   const [breweries, setBreweries] = useState([]);
   const [beerTypes, setBeerTypes] = useState([]);
   const [filters, setFilters] = useState([]);
-  const [activeFilterType, setActiveFilterType] = useState(null);
   const router = useRouter();
+
+  useRealtimeBeerSubscription({breweries, setBeers, setGlobalRatings});
+
+  useRealtimeUserRatingSubscription({user, setUserRatings});
+
+  useRealtimeBrewerySubscription({setBreweries});
+
+  useRealtimeCountrySubscription({setCountries});
 
   useEffect(() => {
     // Fetch user info
@@ -64,10 +78,28 @@ export default function HomeScreen() {
   }, [initializing]);
 
   useEffect(() => {
-    fetchData('Country');
-    fetchData('Brewery');
-    fetchData('BeerType');
-    fetchBeers();
+    const loadAllData = async () => {
+      setLoading(true);
+      try {
+        const [countries, breweries, beerTypes] = await Promise.all([
+          supabase.from('Country').select('name, iso'),
+          supabase.from('Brewery').select('id, name'),
+          supabase.from('BeerType').select('name'),
+        ]);
+
+        setCountries(countries.data);
+        setBreweries(breweries.data);
+        setBeerTypes(beerTypes.data);
+
+        await fetchBeers(breweries.data);
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAllData();
   }, []);
 
   const fetchData = async (collectionName) => {
@@ -84,9 +116,7 @@ export default function HomeScreen() {
 
       const { data, error } = await query;
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       if (collectionName === 'Country') {
         setCountries(data);
@@ -100,31 +130,61 @@ export default function HomeScreen() {
     }
   };
 
-  const fetchBeers = async () => {
-    setLoading(true);
+  const fetchBeers = async (breweriesList) => {
     try {
-      const { data, error } = await supabase.from('Beer').select('*');
+      let { data, error } = await supabase.from('Beer').select('*');
 
-      if (error) {
-        throw error;
-      }
+      data = await Promise.all(data.map(async (beer) => {
+        const brewery = breweriesList.find(brew => brew.id === beer.breweryId);
+        return {
+          ...beer,
+          brewery: brewery ? brewery.name : 'Unknown Brewery',
+        };
+      }));
+
+      if (error) throw error;
+
+      fetchGlobalRatings(data);
 
       setBeers(data);
-
-      if (user) {
-        await fetchUserRatings(data);
-      }
     } catch (error) {
       console.error('Error fetching beers:', error);
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const fetchGlobalRatings = async (beerData) => {
+    try {
+      const ratings = {};
+
+      await Promise.all(
+        beerData.map(async (beer) => {
+          try {
+            const { data: globalRating, error: globalRatingError } = await supabase
+              .from('Beer')
+              .select('overallRating')
+              .eq('id', beer.id)
+              .single();
+
+            if (globalRatingError) {
+              throw new Error(globalRatingError.message);
+            }
+
+            ratings[beer.id] = beer.overallRating;
+          } catch (err) {
+            console.error(`Error fetching rating for beer ${beer.id}:`, err);
+            ratings[beer.id] = 0;
+          }
+        })
+      );
+      setGlobalRatings(ratings);
+    } catch (error) {
+      console.error('Error fetching global ratings:', error);
     }
   };
 
   const fetchUserRatings = async (beerData) => {
     try {
       const ratings = {};
-      setLoading(true);
 
       if (user) {
         await Promise.all(
@@ -135,17 +195,20 @@ export default function HomeScreen() {
                 .select('overallRating')
                 .eq('beerId', beer.id)
                 .eq('userId', user.id)
-                .single();
+                .maybeSingle();
 
               if (userRatingError) {
                 throw new Error(userRatingError.message);
               }
 
-              // Store the rating in the ratings object
-              ratings[beer.id] = userRating ? userRating.overall_rating : 0;
+              // Check if user rating exists
+              if (userRating && userRating.overallRating !== null) {
+                ratings[beer.id] = userRating.overallRating;
+              } else {
+                ratings[beer.id] = null;
+              }
             } catch (err) {
               console.error(`Error fetching rating for beer ${beer.id}:`, err);
-              // If there's an error for one beer, continue to the next beer
               ratings[beer.id] = 0;
             }
           })
@@ -154,59 +217,14 @@ export default function HomeScreen() {
       setUserRatings(ratings);
     } catch (error) {
       console.error('Error fetching user ratings:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
-  const openFilterModal = (filterType) => {
-    setActiveFilterType(filterType);
-    setFilterModalVisible(true);
-  };
-
-  const handleApplyFilters = useCallback((filterType, selectedValue) => {
-    setFilters((prevFilters) => {
-      if (!selectedValue) {
-        // Remove filter if no value is selected
-        return prevFilters.filter(filter => filter.type !== filterType);
-      }
-
-      let value = selectedValue;
-
-      if (filterType === 'country') {
-        const countryObject = countries.find(c => c.name === selectedValue);
-        if (countryObject) {
-          value = countryObject.iso;
-        }
-      } else if (filterType === 'brewery') {
-        const breweryObject = breweries.find(b => b.name === selectedValue);
-        if (breweryObject) {
-          value = breweryObject.id;
-        }
-      }
-
-      return [
-        ...prevFilters.filter(filter => filter.type !== filterType),
-        { type: filterType, value, displayValue: selectedValue },
-      ];
-    });
-
-    setFilterModalVisible(false);
-  }, [countries, breweries]);
-
-  const handleRemoveFilter = useCallback((filterToRemove) => {
-    setFilters((prevFilters) => prevFilters.filter(filter =>
-      !(filter.type === filterToRemove.type && filter.value === filterToRemove.value)
-    ));
-  }, []);
-
-  const clearSearch = () => {
-    setSearchQuery('');
-  };
-
-  const clearAllFilters = () => {
-    setFilters([]);
-  };
+  useEffect(() => {
+    if(user && beers.length > 0) {
+      fetchUserRatings(beers)
+    }
+  }, [user, beers]);
 
   const refreshData = async () => {
     setLoading(true);
@@ -258,6 +276,16 @@ export default function HomeScreen() {
           ((userRatings[b.id] || b.overallRating || 0) - (userRatings[a.id] || a.overallRating || 0))
         );
         break;
+      case 'Global Rating Ascending':
+        filtered.sort((a, b) =>
+          ((globalRatings[a.id] || a.overallRating || 0) - (globalRatings[b.id] || b.overallRating || 0))
+        );
+        break;
+      case 'Global Rating Descending':
+        filtered.sort((a, b) =>
+          ((globalRatings[b.id] || b.overallRating || 0) - (globalRatings[a.id] || a.overallRating || 0))
+        );
+        break;
     }
 
     return filtered;
@@ -265,81 +293,29 @@ export default function HomeScreen() {
 
 
   if (loading || initializing) {
-    return <ActivityIndicator size="large" color="#0000ff" />;
+    return <LoadingScreen />;
   }
-
-  // display names for dropdown components
-  const countryNames = countries.map(country => country.name);
-  const breweryNames = breweries.map(brewery => brewery.name);
-  const beerTypeNames = beerTypes.map(type => type.name);
 
   return (
     <View style={styles.container}>
-      <View style={styles.searchBarContainer}>
-        <View style={styles.searchBarWrapper}>
-          <Icon name="magnify" size={20} color="#ccc" style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchBar}
-            placeholder="Search"
-            value={searchQuery}
-            onChangeText={(text) => setSearchQuery(text)}
-          />
-          {searchQuery ? (
-            <Pressable onPress={clearSearch}>
-              <Icon name="close-circle" size={24} style={styles.clearButton} />
-            </Pressable>
-          ) : null}
-        </View>
-      </View>
+
+      <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
       <View style={styles.filtersRow}>
-        <Picker
-          selectedValue={sortOption}
-          onValueChange={(value) => setSortOption(value)}
-          style={styles.picker}
-        >
-          <Picker.Item label="Rating ↓" value="Rating Descending" />
-          <Picker.Item label="Rating ↑" value="Rating Ascending" />
-          <Picker.Item label="Name A-Z" value="Name A-Z" />
-          <Picker.Item label="Name Z-A" value="Name Z-A" />
-          <Picker.Item label="Country A-Z" value="Country A-Z" />
-          <Picker.Item label="Country Z-A" value="Country Z-A" />
-        </Picker>
-
-        <Pressable
-          style={styles.filterButton}
-          onPress={() => openFilterModal()}
-        >
-          <Text style={styles.filterButtonText}>Add Filter</Text>
-        </Pressable>
+        <SortSelector/>
+        <FilterSelector
+          filters={filters}
+          setFilters={setFilters}
+          countries={countries}
+          breweries={breweries}
+          beerTypes={beerTypes}
+        />
       </View>
 
-      {filters.length > 0 && (
-        <View style={styles.activeFiltersContainer}>
-          <View style={styles.activeFiltersHeader}>
-            <Text style={styles.activeFiltersTitle}>Active Filters:</Text>
-            <Pressable onPress={clearAllFilters} style={styles.clearAllButton}>
-              <Text style={styles.clearAllText}>Clear All</Text>
-            </Pressable>
-          </View>
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.activeFiltersContent}>
-            {filters.map((filter, index) => (
-              <View key={index} style={styles.activeFilterChip}>
-                <Text style={styles.activeFilterText}>
-                  {filter.type === 'country' ? 'Country: ' :
-                   filter.type === 'brewery' ? 'Brewery: ' :
-                   'Type: '}
-                  {filter.displayValue}
-                </Text>
-                <Pressable onPress={() => handleRemoveFilter(filter)}>
-                  <Icon name="close-circle" size={16} color="#666" />
-                </Pressable>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-      )}
+      <ActiveFilterList
+        filters={filters}
+        setFilters={setFilters}
+      />
 
       {/* Results Count */}
       <View style={styles.resultsContainer}>
@@ -347,17 +323,6 @@ export default function HomeScreen() {
           {filteredBeers.length} {filteredBeers.length === 1 ? 'beer' : 'beers'} found
         </Text>
       </View>
-
-      <FilterModal
-        visible={filterModalVisible}
-        onClose={() => setFilterModalVisible(false)}
-        onApplyFilters={handleApplyFilters}
-        countries={countryNames}
-        breweries={breweryNames}
-        beerTypes={beerTypeNames}
-        filters={filters}
-        activeFilterType={activeFilterType}
-      />
 
       <FlatList
         data={filteredBeers}
@@ -374,7 +339,8 @@ export default function HomeScreen() {
             <Pressable>
               <BeerCard
                 {...beer}
-                overallRating={userRatings[beer.id] || beer.overallRating || 0}
+                globalRating={globalRatings[beer.id]}
+                userRating={userRatings[beer.id]}
               />
             </Pressable>
           </Link>
@@ -395,38 +361,7 @@ const styles = StyleSheet.create({
   scrollContainer: {
     padding: 16,
   },
-  searchBarContainer: {
-    alignItems: 'center',
-    padding: 16,
-  },
-  searchBarWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchBar: {
-    flex: 1,
-    height: 40,
-    fontSize: 16,
-  },
-  clearButton: {
-    marginLeft: 10,
-    color: '#ccc',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  filtersRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    marginBottom: 8,
-  },
+
   sortContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -437,12 +372,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
     flexShrink: 0,
   },
-  picker: {
-    width: '30%',
-    flex: 1,
-    marginRight: 20,
-    color: '#333',
-  },
+
   filtersContainer: {
     marginBottom: 8,
     paddingHorizontal: 16,
@@ -456,56 +386,6 @@ const styles = StyleSheet.create({
   },
   filterButtonsContainer: {
     paddingVertical: 8,
-  },
-  filterButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'blue',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight:20
-  },
-  filterButtonText: {
-    color: 'blue',
-    fontWeight: '500',
-  },
-  activeFiltersContainer: {
-    marginHorizontal: 16,
-    marginBottom: 8,
-  },
-  activeFiltersHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  activeFiltersTitle: {
-    fontSize: 14,
-  },
-  clearAllButton: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-  },
-  clearAllText: {
-    color: 'red',
-    fontSize: 14,
-  },
-  activeFiltersContent: {
-    flexDirection: 'row',
-    paddingBottom: 8,
-  },
-  activeFilterChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-  },
-  activeFilterText: {
-    fontSize: 14,
-    color: 'blue',
-    marginRight: 8,
   },
   resultsContainer: {
     paddingHorizontal: 16,

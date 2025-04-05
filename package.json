@@ -1,7 +1,7 @@
 {
   "name": "beerdb",
   "main": "expo-router/entry",
-  "version": "0.2.1",
+  "version": "0.2.4",
   "scripts": {
     "start": "expo start --dev-client",
     "reset-project": "node ./scripts/reset-project.js",
@@ -50,8 +50,7 @@
     "react-native-url-polyfill": "^2.0.0",
     "react-native-vector-icons": "^10.2.0",
     "react-native-web": "~0.19.13",
-    "react-native-webview": "13.12.2",
-    "@react-native-picker/picker": "2.9.0"
+    "react-native-webview": "13.12.2"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
