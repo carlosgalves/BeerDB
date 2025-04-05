@@ -15,6 +15,7 @@ import {
 import { supabase } from '../../utils/supabase.config';
 import Constants from 'expo-constants';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import LoadingScreen from '../../components/LoadingScreen';
 
 const UserProfileScreen = () => {
   const [user, setUser] = useState(null);
@@ -43,7 +44,7 @@ const UserProfileScreen = () => {
   }, []);
 
   if (loading) {
-    return <ActivityIndicator size="large" color="#0000ff" />;
+    return <LoadingScreen />;
   }
 
   const handleSignOut = async () => {
