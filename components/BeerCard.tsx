@@ -24,10 +24,10 @@ class BeerCard extends PureComponent<BeerCardProps> {
     // Determine which rating to show
     const isUserRatingAvailable = userRating !== undefined && userRating !== null;
     const ratingValue = isUserRatingAvailable ? userRating : globalRating ?? 0;
-    const ratingColor = isUserRatingAvailable ? 'blue' : 'red'; // Blue for user, Red for global
+    const ratingColor = isUserRatingAvailable ? '#f4ce0c' : '#ccba61';
 
-  console.log(isUserRatingAvailable)
-  console.log(userRating)
+    const displayedGlobalRating = globalRating ? globalRating.toFixed(1) : 'N/A';
+    const displayedUserRating = isUserRatingAvailable ? userRating.toFixed(1) : 'N/A';
 
     return (
       <Card style={styles.card}>
@@ -64,16 +64,30 @@ class BeerCard extends PureComponent<BeerCardProps> {
               readonly
               type="custom"
               ratingColor={ratingColor}
-              ratingBackgroundColor='#c8c7c8'
+              ratingBackgroundColor="#c8c7c8"
               imageSize={30}
               ratingCount={5}
               fractions={2}
               startingValue={ratingValue}
               tintColor={styles.card.backgroundColor}
             />
-            <Text style={styles.ratingText}>
-              ({globalRating ? globalRating.toFixed(1) : 'N/A'})
-            </Text>
+
+            <View style={styles.ratingBoxesContainer}>
+              {displayedGlobalRating !== null && displayedUserRating != null && displayedUserRating !== undefined &&
+                displayedGlobalRating !== displayedUserRating && (
+                <View style={styles.globalRatingBox}>
+                  <Text style={styles.globalRatingText}>
+                    {displayedGlobalRating}
+                  </Text>
+                </View>
+              )}
+
+              {isUserRatingAvailable && (
+                <View style={styles.userRatingBox}>
+                  <Text style={styles.userRatingText}>{displayedUserRating}</Text>
+                </View>
+              )}
+            </View>
           </View>
         </Card.Content>
       </Card>
@@ -115,12 +129,37 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   ratingContainer: {
+    flexDirection: 'column',
     alignItems: 'center',
-    marginTop: 10,
+    marginBottom: 8,
   },
-  ratingText: {
+  ratingBoxesContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  globalRatingBox: {
+    backgroundColor: '#e0e0e0',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginRight: 8,
+    borderRadius: 4,
+  },
+  globalRatingText: {
     fontSize: 16,
-    marginBottom: 5,
+    color: '#000',
+    fontWeight: 'bold',
+  },
+  userRatingBox: {
+    backgroundColor: '#f4ce0c',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  userRatingText: {
+    fontSize: 14,
+    color: '#000',
+    fontWeight: 'bold',
   },
 });
 
