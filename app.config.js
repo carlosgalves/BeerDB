@@ -5,42 +5,43 @@ const EAS_PROJECT_ID = "efb505ce-2fc7-4e9a-9234-802712fc1204";
 const PROJECT_SLUG = "beerdb";
 const OWNER = "carlosgalves";
 
-// App production config
 const APP_NAME = "BeerDB";
 const BUNDLE_IDENTIFIER = "com.carlosgalves.beerdb";
 const PACKAGE_NAME = "com.carlosgalves.beerdb";
 const ICON = "./assets/images/icon.png";
 const ADAPTIVE_ICON = "./assets/images/adaptive-icon.png";
 const SCHEME = "beerdb";
+const UPDATE_URL = `https://u.expo.dev/${EAS_PROJECT_ID}`;
 
 export default ({ config }: ConfigContext): ExpoConfig => {
-  console.log("Building app for environment:", process.env.APP_ENV);
-  const { name, bundleIdentifier, icon, adaptiveIcon, packageName, scheme } =
-    getDynamicAppConfig(
-      (process.env.APP_ENV as "development" | "preview" | "production") ||
-        "development"
-    );
+  const environment =
+    (process.env.APP_ENV as "development" | "preview" | "production") ||
+    "development";
 
-return {
+  console.log("Building app for environment:", environment);
+
+  const dynamicConfig = getDynamicAppConfig(environment);
+
+  return {
     ...config,
-    name: name,
+    name: dynamicConfig.name,
     version,
     slug: PROJECT_SLUG,
     orientation: "portrait",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
-    icon: icon,
-    scheme: scheme,
+    icon: dynamicConfig.icon,
+    scheme: dynamicConfig.scheme,
     ios: {
       supportsTablet: true,
-      bundleIdentifier: bundleIdentifier,
+      bundleIdentifier: dynamicConfig.bundleIdentifier,
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: adaptiveIcon,
+        foregroundImage: dynamicConfig.adaptiveIcon,
         backgroundColor: "#ffffff",
       },
-      package: packageName,
+      package: dynamicConfig.packageName,
     },
     web: {
       bundler: "metro",
@@ -62,18 +63,20 @@ return {
     experiments: {
       typedRoutes: true,
     },
+    updates: dynamicConfig.updates ?? {
+      url: UPDATE_URL, // fallback
+    },
     extra: {
       router: {
-        origin: false
+        origin: false,
       },
       eas: {
         projectId: EAS_PROJECT_ID,
       },
-      buildNumber: "5",
-
+      buildNumber: "8",
     },
     owner: OWNER,
-    runtimeVersion:  "1.0.0"
+    runtimeVersion: "1.0.0",
   };
 };
 
@@ -81,9 +84,8 @@ return {
 export const getDynamicAppConfig = (
   environment: "development" | "preview" | "production"
 ) => {
-  // Base configuration for all environments
   const baseConfig = {
-    url: `https://u.expo.dev/${EAS_PROJECT_ID}`,
+    url: UPDATE_URL,
     checkAutomatically: "ON_LOAD",
   };
 
@@ -109,9 +111,10 @@ export const getDynamicAppConfig = (
       updates: {
         ...baseConfig,
         requestHeaders: {
-          "expo-channel-name": "production"
-        }
-      }
+          "expo-channel-name": "preview",
+        },
+        url: UPDATE_URL,
+      },
     };
   }
 
@@ -125,8 +128,9 @@ export const getDynamicAppConfig = (
     updates: {
       ...baseConfig,
       requestHeaders: {
-        "expo-channel-name": "preview"
-      }
-    }
+        "expo-channel-name": "development",
+      },
+      url: UPDATE_URL,
+    },
   };
 };
