@@ -12,6 +12,7 @@ const PACKAGE_NAME = "com.carlosgalves.beerdb";
 const ICON = "./assets/images/icon.png";
 const ADAPTIVE_ICON = "./assets/images/adaptive-icon.png";
 const SCHEME = "beerdb";
+const UPDATE_URL = "https://u.expo.dev/" + EAS_PROJECT_ID;
 
 export default ({ config }: ConfigContext): ExpoConfig => {
   console.log("Building app for environment:", process.env.APP_ENV);
@@ -110,7 +111,8 @@ export const getDynamicAppConfig = (
         ...baseConfig,
         requestHeaders: {
           "expo-channel-name": "production"
-        }
+        },
+        url: UPDATE_URL
       }
     };
   }
@@ -126,7 +128,8 @@ export const getDynamicAppConfig = (
       ...baseConfig,
       requestHeaders: {
         "expo-channel-name": "preview"
-      }
+      },
+      url: UPDATE_URL
     }
   };
 };
