@@ -135,9 +135,9 @@ export default function HomeScreen() {
 
       fetchGlobalRatings(data);
 
-      if (user) {
-        await fetchUserRatings(data);
-      }
+      /* if (user) {
+        fetchUserRatings(data);
+      } */
 
       setBeers(data);
     } catch (error) {
@@ -209,11 +209,16 @@ export default function HomeScreen() {
         );
       }
       setUserRatings(ratings);
-      console.log(ratings)
     } catch (error) {
       console.error('Error fetching user ratings:', error);
     }
   };
+
+  useEffect(() => {
+    if(user && beers.length > 0) {
+      fetchUserRatings(beers)
+    }
+  }, [user, beers]);
 
   const refreshData = async () => {
     setLoading(true);
