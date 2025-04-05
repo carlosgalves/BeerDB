@@ -69,17 +69,17 @@ export default function HomeScreen() {
     const loadAllData = async () => {
       setLoading(true);
       try {
-        const [countriesData, breweriesData, beerTypesData] = await Promise.all([
+        const [countries, breweries, beerTypes] = await Promise.all([
           supabase.from('Country').select('name, iso'),
           supabase.from('Brewery').select('id, name'),
           supabase.from('BeerType').select('name'),
         ]);
 
-        setCountries(countriesData.data || []);
-        setBreweries(breweriesData.data || []);
-        setBeerTypes(beerTypesData.data || []);
+        setCountries(countries.data);
+        setBreweries(breweries.data);
+        setBeerTypes(beerTypes.data);
 
-        await fetchBeers(breweriesData.data || []);
+        await fetchBeers(breweries.data);
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
       } finally {
