@@ -11,7 +11,7 @@ const PACKAGE_NAME = "com.carlosgalves.beerdb";
 const ICON = "./assets/images/icon.png";
 const ADAPTIVE_ICON = "./assets/images/adaptive-icon.png";
 const SCHEME = "beerdb";
-const UPDATE_URL = `https://u.expo.dev/${EAS_PROJECT_ID}`;
+const UPDATE_URL = "https://u.expo.dev/" + EAS_PROJECT_ID;
 
 export default ({ config }: ConfigContext): ExpoConfig => {
   const environment =
@@ -24,24 +24,24 @@ export default ({ config }: ConfigContext): ExpoConfig => {
 
   return {
     ...config,
-    name: dynamicConfig.name,
+    name: name,
     version,
     slug: PROJECT_SLUG,
     orientation: "portrait",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
-    icon: dynamicConfig.icon,
-    scheme: dynamicConfig.scheme,
+    icon: icon,
+    scheme: scheme,
     ios: {
       supportsTablet: true,
-      bundleIdentifier: dynamicConfig.bundleIdentifier,
+      bundleIdentifier: bundleIdentifier,
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: dynamicConfig.adaptiveIcon,
+        foregroundImage: adaptiveIcon,
         backgroundColor: "#ffffff",
       },
-      package: dynamicConfig.packageName,
+      package: packageName,
     },
     web: {
       bundler: "metro",
@@ -63,7 +63,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     experiments: {
       typedRoutes: true,
     },
-    updates: dynamicConfig.updates ?? {
+    updates: updates ?? {
       url: UPDATE_URL, // fallback
     },
     extra: {
