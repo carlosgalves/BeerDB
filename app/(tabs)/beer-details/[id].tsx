@@ -1,37 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image, Button, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image, TouchableOpacity, useColorScheme } from 'react-native';
 import Toast from '@/components/ToastAndroid';
 import { useLocalSearchParams, Stack, useNavigation } from 'expo-router';
-import { supabase } from '../../../utils/supabase.config.js';
+import { supabase } from '@/utils/supabase.config.js';
 import { flagImages, beerImages } from '../../../data/mappers/imageMapper'
 import SwitchSelector from 'react-native-switch-selector';
 import { Ionicons } from '@expo/vector-icons';
 import { Rating } from 'react-native-ratings';
-import { getAuth } from 'firebase/auth';
-import useRealtimeUserRatingSubscription from '../../../hooks/useRealtimeUserRatingSubscription';
-import LoadingScreen from '../../../components/LoadingScreen';
+import useRealtimeUserRatingSubscription from '@/hooks/useRealtimeUserRatingSubscription';
+import LoadingScreen from '@/components/LoadingScreen';
+import { Chip, Button } from 'react-native-paper';
+import RatingComponent from '@/components/beer/RatingComponent';
+import { Colors } from '@/constants/Colors';
 
 export default function BeerDetails() {
-  const { id } = useLocalSearchParams()
-  const navigation = useNavigation()
+  const colorScheme = useColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+  const styles = getStyles(theme);
+  const { id } = useLocalSearchParams();
+  const navigation = useNavigation();
   const [user, setUser] = useState(null);
   const userId = user?.id;
-  const isUserAnonymous = !user?.app_metadata?.provider
-  const [loading, setLoading] = useState(true)
-  const [beer, setBeer] = useState(null)
+  const isUserAnonymous = !user?.app_metadata?.provider;
+  const [loading, setLoading] = useState(true);
+  const [beer, setBeer] = useState(null);
   const [userRatings, setUserRatings] = useState({
     overallRating: 0,
     tasteRating: 0,
     aromaRating: 0,
     afterTasteRating: 0,
-  })
-  const [allowRating, setAllowRating] = useState(false)
-  const [ratingType, setRatingType] = useState('global')
+  });
+  const [allowRating, setAllowRating] = useState(false);
+  const [ratingType, setRatingType] = useState('global');
   const [countryName, setCountryName] = useState('');
   const [breweryName, setBreweryName] = useState('');
   const [beerType, setBeerType] = useState('');
 
-  useRealtimeUserRatingSubscription({user, setUserRatings});
+  useRealtimeUserRatingSubscription({ user, setUserRatings });
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -55,12 +60,10 @@ export default function BeerDetails() {
     };
   }, []);
 
-  // Fetch beer details from Supabase
   useEffect(() => {
     const fetchBeerData = async () => {
       setLoading(true);
       try {
-        // Fetch beer data
         const { data: beerData, error: beerError } = await supabase
           .from('Beer')
           .select()
@@ -69,14 +72,12 @@ export default function BeerDetails() {
 
         if (beerError || !beerData) {
           console.error('Error fetching beer:', beerError);
-          Toast.show('Error fetching beer');
           setBeer(null);
           return;
         }
 
         setBeer(beerData);
 
-        // Fetch country name
         const { data: countryData, error: countryError } = await supabase
           .from('Country')
           .select('name')
@@ -89,7 +90,6 @@ export default function BeerDetails() {
           console.error('Error fetching country:', countryError);
         }
 
-        // Fetch brewery name
         const { data: breweryData, error: breweryError } = await supabase
           .from('Brewery')
           .select('name')
@@ -102,7 +102,6 @@ export default function BeerDetails() {
           console.error('Error fetching brewery:', breweryError);
         }
 
-        // Fetch beer type
         const { data: beerType, error: beerTypeError } = await supabase
           .from('BeerType')
           .select('name')
@@ -115,7 +114,6 @@ export default function BeerDetails() {
           console.error('Error fetching beer type:', beerTypeError);
         }
 
-        // Fetch user's rating for this beer if user is logged in
         if (user) {
           const { data: userRatingData, error: userRatingError } = await supabase
             .from('UserRating')
@@ -125,17 +123,15 @@ export default function BeerDetails() {
             .single();
 
           if (!userRatingError && userRatingData) {
-            // User has rated this beer before
             setUserRatings({
               overallRating: userRatingData.overallRating || 0,
               aromaRating: userRatingData.aromaRating || 0,
               tasteRating: userRatingData.tasteRating || 0,
               afterTasteRating: userRatingData.afterTasteRating || 0,
             });
-            setAllowRating(false);  // Disable further rating
+            setAllowRating(false);
             setRatingType('user');
           } else {
-            // User hasn't rated this beer, allow them to rate
             setUserRatings({
               overallRating: 0,
               tasteRating: 0,
@@ -162,11 +158,11 @@ export default function BeerDetails() {
     if (loading) return;
 
     if (Object.values(userRatings).every(value => value === 0)) {
-      setAllowRating(false)
-      setRatingType('global')
+      setAllowRating(false);
+      setRatingType('global');
     } else {
-      setAllowRating(true)
-      setRatingType('user')
+      setAllowRating(true);
+      setRatingType('user');
     }
   }, [loading, userRatings]);
 
@@ -177,15 +173,12 @@ export default function BeerDetails() {
       const { aromaRating, tasteRating, afterTasteRating } = updatedRatings;
 
       if (aromaRating && tasteRating && afterTasteRating) {
-        // Calculate the overall rating
         const overallRating = (aromaRating + tasteRating + afterTasteRating) / 3;
 
-        // Use async/await in an IIFE (Immediately Invoked Function Expression)
         (async () => {
           try {
             console.log('Updating rating for:', user.id, beer.id);
 
-            // Await the upsert operation
             const { data, error } = await supabase
               .from('UserRating')
               .upsert(
@@ -201,7 +194,6 @@ export default function BeerDetails() {
                 ],
                 {
                   onConflict: ['userId', 'beerId'],
-                  ignoreDuplicates: false
                 }
               );
 
@@ -225,7 +217,6 @@ export default function BeerDetails() {
     });
   };
 
-
   if (loading) {
     return <LoadingScreen />;
   }
@@ -238,81 +229,107 @@ export default function BeerDetails() {
     );
   }
 
-  const {
-    name, brewery, countryIso, type, description, abv, tags, image,
-    overallRating, aromaRating, tasteRating, afterTasteRating
-  } = beer;
+  const { name, image, description, abv, tags, overallRating, aromaRating, tasteRating, afterTasteRating } = beer;
 
   return (
     <>
-    <Stack.Screen
-      options={{
-        title: name,
-        headerLeft: () => (
-          <Ionicons
-            name="arrow-back"
-            size={24}
-            color="black"
-            style={{ marginLeft: 10 }}
-            onPress={() => navigation.goBack()}
-          />
-        ),
-      }}
-    />
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.subtitle}>Brewery: {breweryName || 'Unknown'}</Text>
-      <View style={styles.coverContainer}>
-        <Image
-          source={
-            image
-              ? { uri: `https://dkawnlfcrjkdsivajojq.supabase.co/storage/v1/object/public/beer-images/${image}` }
-              : require('../../../assets/images/placeholders/unknown-beer.png')
-          }
-          style={styles.image}
-          resizeMode="contain"
-        />
-      </View>
-      <View style={styles.flagContainer}>
-        <Image
-          source={
-            countryIso
-              ? { uri: `https://dkawnlfcrjkdsivajojq.supabase.co/storage/v1/object/public/flags/${countryIso}.png` }
-              : require('../../../assets/images/placeholders/unknown-flag.png')
-          }
-          style={styles.flagImage}
-        />
-      </View>
-      <Text style={styles.country}>Country: {countryName}</Text>
-      <Text style={styles.type}>Type: {beerType}</Text>
-      <Text style={styles.description}>Description: {description}</Text>
-      <Text style={styles.alcohol}>ABV: {abv}%</Text>
-      <Text style={styles.tags}>Tags: {tags?.join(', ')}</Text>
-      <Text style={[styles.rating]}>
-        Overall Rating: {ratingType === 'user' 
-          ? parseFloat((userRatings.overallRating || 0).toFixed(1)) 
-          : parseFloat((overallRating || 0).toFixed(1))}
-      </Text>
-
-      <Rating
-        readonly
-        type="custom"
-        ratingColor={"#f4ce0c"}
-        imageSize={50}
-        ratingCount={5}
-        minValue={0}
-        startingValue={ratingType==='user' ? userRatings.overallRating : overallRating}
-        jumpValue={0.5}
-        fractions={2}
-        style={{ paddingVertical: 10 }}
+      <Stack.Screen
+        options={{
+          title: name,
+          headerLeft: () => (
+            <Ionicons
+              name="arrow-back"
+              size={24}
+              color="black"
+              style={{ marginLeft: 10 }}
+              onPress={() => navigation.goBack()}
+            />
+          ),
+        }}
       />
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.breweryRow}>
+          <Image
+            source={
+              countryName
+                ? { uri: `https://dkawnlfcrjkdsivajojq.supabase.co/storage/v1/object/public/flags/${beer.countryIso}.png` }
+                : require('../../../assets/images/placeholders/unknown-flag.png')
+            }
+            style={styles.flagImage}
+          />
+          <Text style={styles.breweryName}>{breweryName || 'Unknown Brewery'}</Text>
+        </View>
 
-      <Text style={[styles.detail]}>
-        Global average: {overallRating ? parseFloat(overallRating.toFixed(1)) : 'N/A'}
-      </Text>
+        <View style={styles.coverContainer}>
+          <Image
+            source={
+              image
+                ? { uri: `https://dkawnlfcrjkdsivajojq.supabase.co/storage/v1/object/public/beer-images/${image}` }
+                : require('../../../assets/images/placeholders/unknown-beer.png')
+            }
+            style={styles.image}
+            resizeMode="contain"
+          />
+        </View>
 
-      { (Object.values(userRatings).some(value => value === 0)) && (
-        <TouchableOpacity
-          onPress={ () => {
+        <View style={styles.row}>
+          <View style={styles.column}>
+            <Text style={styles.type}>Categoria</Text>
+            <Text style={styles.bold}>{beerType}</Text>
+          </View>
+
+          <View style={styles.column}>
+            <Text style={styles.abv}>Vol. alc.</Text>
+            <Text style={styles.bold}>{abv}%</Text>
+          </View>
+        </View>
+
+        {/* tags */}
+        {tags && tags.length > 0 ? (
+        <View style={styles.tagsContainer}>
+          <View style={styles.tagsList}>
+            {tags.map((tag, index) => (
+              <Chip
+                key={index}
+                style={[
+                  styles.tagChip,
+                  { backgroundColor: theme.tint },
+                ]}
+              >
+                {tag}
+              </Chip>
+             ))}
+           </View>
+         </View>
+        ) : null}
+
+        <View style={styles.descriptionContainer}>
+          <Text style={styles.descriptionHeader}>Descrição</Text>
+          <Text style={styles.description}>
+            {description || 'Descrição indisponível'}
+          </Text>
+        </View>
+
+        <Rating
+          readonly
+          type="custom"
+          ratingColor={theme.tint}
+          imageSize={50}
+          ratingCount={5}
+          minValue={0}
+          startingValue={ratingType === 'user' ? userRatings.overallRating : overallRating}
+          jumpValue={0.5}
+          fractions={2}
+          style={{ paddingVertical: 10 }}
+        />
+        <Text style={styles.overallRating}>
+          {ratingType === 'user' ? userRatings.overallRating : overallRating}
+        </Text>
+
+        { (Object.values(userRatings).some(value => value === 0)) && (
+        <Button
+          mode="contained"
+          onPress={() => {
             if (!allowRating) {
               setAllowRating(true)
               setRatingType('user')
@@ -327,202 +344,213 @@ export default function BeerDetails() {
               });
             }
           }}
-          style={[
-              styles.button,
-              isUserAnonymous && styles.disabledButton,
-              ratingType === 'user' && styles.cancelButton
-          ]}
           disabled={isUserAnonymous}
+          style={[
+            styles.button,
+            isUserAnonymous && styles.disabledButton,
+            ratingType === 'user' && styles.cancelButton,
+          ]}
         >
           <Text style={isUserAnonymous ? styles.disabledText : styles.buttonText}>
-            {ratingType === 'user' ? 'Cancel' : 'Rate'}
+            {ratingType === 'user' ? 'Cancelar' : 'Avaliar'}
           </Text>
-        </TouchableOpacity>
-      )}
+        </Button>
+        )}
 
-      <View style={styles.switch}>
-        <SwitchSelector
-          disabled={isUserAnonymous}
-          options={[
-            { label: "User", value: "user", customIcon: "", disabled: isUserAnonymous || !Object.values(userRatings).some(value => value) },
-            { label: "Global", value: "global", customIcon: "" }
-          ]}
-          initial={ratingType === 'user' ? 0 : 1}
-          value={ratingType === 'user' ? 0 : 1}
-          onPress={(value) => {
-            if (value === "global") {
-              setRatingType("global");
+        <View style={styles.switch}>
+          <SwitchSelector
+            disabled={isUserAnonymous}
+            options={[
+              { label: "Pessoal", value: "user", customIcon: "", disabled: isUserAnonymous || !Object.values(userRatings).some(value => value) },
+              { label: "Global", value: "global", customIcon: "" }
+            ]}
+            initial={ratingType === 'user' ? 0 : 1}
+            value={ratingType === 'user' ? 0 : 1}
+            onPress={(value) => {
+              if (value === "global") {
+                setRatingType("global");
 
-              if (!Object.values(userRatings).every(rating => rating > 0)) {
-                setUserRatings({
-                  overallRating: overallRating || 0,
-                  tasteRating: tasteRating || 0,
-                  aromaRating: aromaRating || 0,
-                  afterTasteRating: afterTasteRating || 0,
-                });
+                if (!Object.values(userRatings).every(rating => rating > 0)) {
+                  setUserRatings({
+                    overallRating: overallRating || 0,
+                    tasteRating: tasteRating || 0,
+                    aromaRating: aromaRating || 0,
+                    afterTasteRating: afterTasteRating || 0,
+                  });
+                }
+
+              } else if (value === "user" && allowRating) {
+                setRatingType("user");
               }
+            }}
+            style={styles.switchSelector}
+            selectedTextStyle={styles.selectedText}
+            textStyle={styles.optionText}
+            backgroundColor="#f0f0f0"
+            buttonColor="#f4ce0c"
+            borderColor="#f4ce0c"
+            height={50}
+            borderRadius={10}
+          />
+        </View>
 
-            } else if (value === "user" && allowRating) {
-              setRatingType("user");
-            }
-          }}
-        />
-      </View>
-
-      <View style={styles.row}>
-        <Text style={[styles.detail]}>
-          Aroma: {ratingType==='user' ? userRatings.aromaRating : aromaRating}
-        </Text>
-        <Rating
-          readonly={!allowRating || ratingType == 'global'}
-          type="custom"
-          ratingColor={"#f4ce0c"}
-          imageSize={35}
-          ratingCount={5}
-          minValue={0}
-          startingValue={ratingType==='user' ? userRatings.aromaRating : aromaRating}
-          jumpValue={0.5}
-          fractions={2}
+        <RatingComponent
+          label="Aroma"
+          value={ratingType === 'user' ? userRatings.aromaRating : aromaRating}
           onFinishRating={(rating) => updateRating('aromaRating', rating)}
-          style={{ paddingVertical: 10 }}
+          readonly={!allowRating || ratingType === 'global'}
+          allowRating={allowRating}
         />
-      </View>
-      <View style={styles.row}>
-        <Text style={styles.detail}>
-          Taste: {ratingType==='user' ? userRatings.tasteRating : tasteRating}
-        </Text>
-        <Rating
-          readonly={!allowRating || ratingType == 'global'}
-          type="custom"
-          ratingColor={"#f4ce0c"}
-          imageSize={35}
-          ratingCount={5}
-          minValue={0}
-          startingValue={ratingType==='user' ? userRatings.tasteRating : tasteRating}
-          jumpValue={0.5}
-          fractions={2}
+        <RatingComponent
+          label="Sabor"
+          value={ratingType === 'user' ? userRatings.tasteRating : tasteRating}
           onFinishRating={(rating) => updateRating('tasteRating', rating)}
-          style={{ paddingVertical: 10 }}
+          readonly={!allowRating || ratingType === 'global'}
+          allowRating={allowRating}
         />
-      </View>
-      <View style={styles.row}>
-        <Text style={styles.detail}>
-          Aftertaste: {ratingType==='user' ? userRatings.afterTasteRating : afterTasteRating}
-        </Text>
-        <Rating
-          readonly={!allowRating || ratingType == 'global'}
-          type="custom"
-          ratingColor={"#f4ce0c"}
-          imageSize={35}
-          ratingCount={5}
-          minValue={0}
-          startingValue={ratingType==='user' ? userRatings.afterTasteRating : afterTasteRating}
-          jumpValue={0.5}
-          fractions={2}
+        <RatingComponent
+          label="Aftertaste"
+          value={ratingType === 'user' ? userRatings.afterTasteRating : afterTasteRating}
           onFinishRating={(rating) => updateRating('afterTasteRating', rating)}
-          style={{ paddingVertical: 10 }}
+          readonly={!allowRating || ratingType === 'global'}
+          allowRating={allowRating}
         />
-      </View>
-
-    </ScrollView>
+      </ScrollView>
     </>
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: typeof Colors.light | typeof Colors.dark) => StyleSheet.create({
   container: {
     flexGrow: 1,
-    padding: 16,
+    padding: 30,
     paddingBottom: 20,
-    backgroundColor: '#fff',
+    backgroundColor: theme.foreground,
   },
-  title: {
-    fontSize: 24,
+  breweryRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  breweryName: {
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginRight: 10,
   },
-  subtitle: {
-    fontSize: 18,
-    marginBottom: 4,
+  flagImage: {
+    width: 30,
+    height: 30,
+    marginRight: 10,
   },
-  country: {
-    fontSize: 16,
-    marginBottom: 4,
+  coverContainer: {
+    width: '100%',
+    alignItems: 'center',
+    height: 330,
+    marginBottom: 30,
   },
-  type: {
-    fontSize: 16,
-    marginBottom: 4,
-  },
-  description: {
-    fontSize: 16,
-    marginBottom: 8,
-  },
-  alcohol: {
-    fontSize: 16,
-    marginBottom: 4,
-  },
-  rating: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  tags: {
-    fontSize: 16,
-    fontStyle: 'italic',
-    marginBottom: 8,
+  image: {
+    width: '100%',
+    height: '100%',
   },
   row: {
     flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 10,
   },
-  detail: {
+  column: {
+    flexDirection: 'column',
+    alignItems: 'left',
+    width: '60%'
+  },
+  type: {
     fontSize: 16,
-    flex: 1,
+  },
+  abv: {
+    fontSize: 16,
+  },
+  bold: {
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  descriptionContainer: {
+    marginTop: 20,
+  },
+  descriptionHeader: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  description: {
+    fontSize: 16,
+    color: theme.text,
+  },
+  rating: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
   },
   error: {
     fontSize: 20,
     color: 'red',
     textAlign: 'center',
   },
-  coverContainer: {
-    width: '100%',
-    alignItems: 'center',
-    height: 330,
+  tagsContainer: {
+    marginTop: 10,
   },
-  image: {
-      width: '100%',
-      height: '100%',
+  tagsList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
-  flagContainer: {
-    position: 'absolute',
-    top: 50,
-    right: 50,
+  tag: {
+    fontSize: 14,
+    backgroundColor: theme.tint,
+    padding: 5,
+    borderRadius: 10,
+    marginRight: 8,
   },
-  flagImage: {
-    width: 50,
-    height: 50,
-  },
-  switch: {
-    marginTop: 20
+  tagChip: {
+    marginRight: 8,
   },
   button: {
-    backgroundColor: '#007bff',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-  },
-  cancelButton: {
-    backgroundColor: 'red',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
+    marginTop: 20,
+    marginBottom: 10,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: theme.tint,
   },
   disabledButton: {
-    backgroundColor: '#d3d3d3',
+    backgroundColor: theme.disabled,
+  },
+  cancelButton: {
+    backgroundColor: '#e74c3c',
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: theme.text,
   },
   disabledText: {
-    color: '#a9a9a9',
-  }
+    color: theme.placeholderText,
+  },
+  switchSelector: {
+    marginTop: 20,
+    marginBottom: 20,
+    alignSelf: 'center',
+  },
+  selectedText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: theme.text,
+  },
+  optionText: {
+    fontSize: 14,
+    color: theme.text,
+  },
+  overallRating: {
+    fontSize: 16,
+    color: theme.text,
+    textAlign: 'center',
+
+  },
 });
