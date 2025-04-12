@@ -1,22 +1,23 @@
 import React from 'react';
-import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
+import { ActivityIndicator, useColorScheme, View, StyleSheet } from 'react-native';
+import { Colors } from '@/constants/Colors';
 
-export default function LoadingScreen({ message = 'A carregar...' }) {
+const LoadingScreen = () => {
+  const colorScheme = useColorScheme();
+  const spinnerColor = Colors[colorScheme ?? 'light'].tint;
+
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color="#0000ff" />
-      <Text style={styles.text}>{message}</Text>
+      <ActivityIndicator animating={true} size={35} color={spinnerColor} />
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    justifyContent: 'center',
+    marginTop: 100,
     alignItems: 'center',
   },
-  text: {
-    marginTop: 10,
-  },
 });
+
+export default LoadingScreen;
