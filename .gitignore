@@ -88,3 +88,5 @@ yarn-error.*
 /.idea/studiobot.xml
 /metro.config.js
 /scripts/bootstrap/
+/android/
+/ios/
