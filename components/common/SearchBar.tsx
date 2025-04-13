@@ -4,10 +4,16 @@ import {
   View,
   TextInput,
   Pressable,
+  useColorScheme
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Colors } from '@/constants/Colors';
 
 const SearchBar = ({ searchQuery, setSearchQuery }) => {
+
+  const colorScheme = useColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+  const styles = getStyles(theme);
 
   const clearSearch = () => {
     setSearchQuery('');
@@ -16,16 +22,16 @@ const SearchBar = ({ searchQuery, setSearchQuery }) => {
   return (
     <View style={styles.searchBarContainer}>
       <View style={styles.searchBarWrapper}>
-        <Icon name="magnify" size={20} color="#ccc" style={styles.searchIcon} />
+        <Icon name="magnify" size={25} color={theme.text} style={styles.searchIcon} />
         <TextInput
           style={styles.searchBar}
-          placeholder="Search"
+          placeholder="Pesquisar"
           value={searchQuery}
           onChangeText={(text) => setSearchQuery(text)}
         />
         {searchQuery ? (
           <Pressable onPress={clearSearch}>
-            <Icon name="close-circle" size={24} style={styles.clearButton} />
+            <Icon name="close-circle" size={25} style={styles.clearButton} />
           </Pressable>
         ) : null}
       </View>
@@ -34,15 +40,19 @@ const SearchBar = ({ searchQuery, setSearchQuery }) => {
 }
 
 
-const styles = StyleSheet.create({
+const getStyles = (theme: typeof Colors.light | typeof Colors.dark) => StyleSheet.create({
   searchBarContainer: {
+    marginTop: 20,
+    backgroundColor: theme.background,
     alignItems: 'center',
+    backgroundColor: theme.tint,
     padding: 16,
   },
   searchBarWrapper: {
+    backgroundColor: theme.background,
     flexDirection: 'row',
     alignItems: 'center',
-    borderColor: '#ccc',
+    borderColor: theme.text,
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 10,
@@ -51,13 +61,14 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   searchBar: {
+    color: theme.placeholder,
     flex: 1,
     height: 40,
     fontSize: 16,
   },
   clearButton: {
     marginLeft: 10,
-    color: '#ccc',
+    color: theme.text,
     fontSize: 16,
     fontWeight: 'bold',
   },
