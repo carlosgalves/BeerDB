@@ -8,7 +8,8 @@ import {
   Pressable,
   TextInput,
   Text,
-  Button
+  Button,
+  useColorScheme
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import BeerCard from '../../components/BeerCard';
@@ -18,13 +19,17 @@ import useRealtimeBeerSubscription from '../../hooks/useRealtimeBeerSubscription
 import useRealtimeUserRatingSubscription from '../../hooks/useRealtimeUserRatingSubscription';
 import useRealtimeBrewerySubscription from '../../hooks/useRealtimeBrewerySubscription';
 import useRealtimeCountrySubscription from '../../hooks/useRealtimeCountrySubscription';
-import SearchBar from '../../components/SearchBar';
+import SearchBar from '@/components/common/SearchBar';
 import FilterSelector from '../../components/filter/FilterSelector';
 import ActiveFilterList from '../../components/filter/ActiveFilterList';
 import SortSelector from '../../components/filter/SortSelector';
 import LoadingScreen from '../../components/LoadingScreen';
+import { Colors } from '@/constants/Colors';
 
 export default function HomeScreen() {
+  const colorScheme = useColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+  const styles = getStyles(theme);
   const [loading, setLoading] = useState(true);
   const [initializing, setInitializing] = useState(true);
   const [user, setUser] = useState(null);
@@ -299,29 +304,31 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
 
-      <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+      <View style={styles.topSection}>
+        <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
-      <View style={styles.filtersRow}>
-        <SortSelector/>
-        <FilterSelector
+        <View style={styles.filtersRow}>
+          <SortSelector sortOption={sortOption} setSortOption={setSortOption} />
+          <FilterSelector
+            filters={filters}
+            setFilters={setFilters}
+            countries={countries}
+            breweries={breweries}
+            beerTypes={beerTypes}
+          />
+        </View>
+
+        <ActiveFilterList
           filters={filters}
           setFilters={setFilters}
-          countries={countries}
-          breweries={breweries}
-          beerTypes={beerTypes}
         />
-      </View>
 
-      <ActiveFilterList
-        filters={filters}
-        setFilters={setFilters}
-      />
-
-      {/* Results Count */}
-      <View style={styles.resultsContainer}>
-        <Text style={styles.resultsText}>
-          {filteredBeers.length} {filteredBeers.length === 1 ? 'beer' : 'beers'} found
-        </Text>
+        {/* Results Count */}
+        <View style={styles.resultsContainer}>
+          <Text style={styles.resultsText}>
+            {filteredBeers.length} {filteredBeers.length === 1 ? 'cerveja encontrada' : 'cervejas encontradas'}
+          </Text>
+        </View>
       </View>
 
       <FlatList
@@ -353,15 +360,17 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: typeof Colors.light | typeof Colors.dark) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: theme.background,
+  },
+  topSection: {
+    backgroundColor: theme.tint,
   },
   scrollContainer: {
     padding: 16,
   },
-
   sortContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -372,7 +381,6 @@ const styles = StyleSheet.create({
     marginRight: 8,
     flexShrink: 0,
   },
-
   filtersContainer: {
     marginBottom: 8,
     paddingHorizontal: 16,
@@ -392,6 +400,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   resultsText: {
+    color: theme.text,
     fontSize: 14,
+    paddingHorizontal: 16,
   },
 });

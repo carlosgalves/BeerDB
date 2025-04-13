@@ -4,23 +4,28 @@ import {
   View,
   Text,
   Pressable,
-  ScrollView
+  ScrollView,
+  useColorScheme
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Picker } from '@react-native-picker/picker';
+import { Colors } from '@/constants/Colors';
 
 const SortSelector = ({
   sortOption,
   setSortOption
 }) => {
 
-  //const [sortOption, setSortOption] = useState<'Name A-Z' | 'Name Z-A' | 'Country A-Z' | 'Country Z-A' | 'Rating Ascending' | 'Rating Descending' | 'Global Rating Ascending' | 'Global Rating Descending'>('Global Rating Descending');
+  const colorScheme = useColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+  const styles = getStyles(theme);
 
   return (
     <Picker
       selectedValue={sortOption}
       onValueChange={(value) => setSortOption(value)}
       style={styles.picker}
+      mode="dropdown"
     >
       <Picker.Item label="Rating ↓" value="Rating Descending" />
       <Picker.Item label="Rating ↑" value="Rating Ascending" />
@@ -35,12 +40,11 @@ const SortSelector = ({
 
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: typeof Colors.light | typeof Colors.dark) => StyleSheet.create({
   picker: {
-    width: '30%',
     flex: 1,
     marginRight: 20,
-    color: '#333',
+    color: theme.text,
   },
 })
 
